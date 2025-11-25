@@ -1,4 +1,4 @@
 from main import app
 
-# Vercel serverless function handler
-handler = app
+# Export the FastAPI app for Vercel
+# Vercel will look for 'app' or 'handler'
