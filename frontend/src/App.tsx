@@ -27,11 +27,13 @@ function App() {
     // Handle link clicks
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (target.tagName === 'A' && target.getAttribute('href') === '/privacy') {
+      // Handle clicks on the privacy link in the footer or elsewhere
+      const link = target.closest('a');
+      if (link && link.getAttribute('href') === '/privacy') {
         e.preventDefault();
         window.history.pushState({}, '', '/privacy');
         setShowPrivacy(true);
-      } else if (target.tagName === 'A' && target.getAttribute('href') === '/') {
+      } else if (link && link.getAttribute('href') === '/') {
         e.preventDefault();
         window.history.pushState({}, '', '/');
         setShowPrivacy(false);
@@ -64,28 +66,23 @@ function App() {
 
   if (showPrivacy) {
     return (
-      <>
-        <PrivacyPolicy />
-        <Footer />
-      </>
+      <PrivacyPolicy />
     );
   }
 
   return (
-    <>
-      <div className="app" style={{ display: 'flex', height: '100vh', width: '100vw' }}>
-        <Sidebar
-          notams={notams}
-          setNotams={setNotams}
-          onSelect={setSelectedId}
-          onExport={handleExport}
-        />
-        <div className="map-container" ref={mapRef} style={{ flex: 1, position: 'relative' }}>
-          <MapComponent notams={notams} selectedId={selectedId} />
-        </div>
+    <div className="app" style={{ display: 'flex', height: '100vh', width: '100vw' }}>
+      <Sidebar
+        notams={notams}
+        setNotams={setNotams}
+        onSelect={setSelectedId}
+        onExport={handleExport}
+      />
+      <div className="map-container" ref={mapRef} style={{ flex: 1, position: 'relative' }}>
+        <MapComponent notams={notams} selectedId={selectedId} />
+        <Footer />
       </div>
-      <Footer />
-    </>
+    </div>
   );
 }
 
