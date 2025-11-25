@@ -55,7 +55,7 @@ export const Sidebar: React.FC<Props> = ({ notams, setNotams, onSelect, onExport
                 color: '#fa5252'
             }));
 
-            setNotams(prev => [...prev, ...newNotams]);
+            setNotams(newNotams);
             setStatus(`Parsed ${newNotams.length} NOTAMs.`);
             setActiveTab('list');
 
