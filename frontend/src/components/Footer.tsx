@@ -2,7 +2,7 @@ import './Footer.css';
 
 export function Footer() {
   return (
-    <div className="footer">
+    <div className="app-footer">
       <div className="footer-content">
         <a 
           href="https://x.com/Sfaisalafridi" 

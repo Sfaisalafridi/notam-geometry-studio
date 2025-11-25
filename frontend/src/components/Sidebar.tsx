@@ -80,7 +80,7 @@ export const Sidebar: React.FC<Props> = ({ notams, setNotams, onSelect, onExport
     };
 
     return (
-        <div className="sidebar" style={{ width: '350px', height: '100vh', background: '#25262b', borderRight: '1px solid #373a40', display: 'flex', flexDirection: 'column' }}>
+        <div className="sidebar" style={{ position: 'relative', zIndex: 1001, width: '350px', height: '100vh', background: '#25262b', borderRight: '1px solid #373a40', display: 'flex', flexDirection: 'column' }}>
             <div className="header" style={{ padding: '1rem', borderBottom: '1px solid #373a40' }}>
                 <h2 style={{ margin: 0, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Layers size={20} /> NOTAM Studio
@@ -185,7 +185,7 @@ export const Sidebar: React.FC<Props> = ({ notams, setNotams, onSelect, onExport
                 )}
             </div>
 
-            <div className="footer" style={{ padding: '1rem', borderTop: '1px solid #373a40' }}>
+            <div className="sidebar-footer" style={{ padding: '1rem', borderTop: '1px solid #373a40' }}>
                 <button className="btn" style={{ width: '100%', background: '#373a40', color: 'white', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }} onClick={onExport}>
                     <Download size={16} /> Export 4K Map
                 </button>

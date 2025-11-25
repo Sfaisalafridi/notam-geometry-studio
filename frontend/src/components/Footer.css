@@ -1,4 +1,4 @@
-.footer {
+.app-footer {
   position: absolute; /* Changed from fixed to absolute */
   bottom: 0;
   left: 0;
@@ -60,7 +60,7 @@
 }
 
 @media (max-width: 768px) {
-  .footer {
+  .app-footer {
     padding: 8px;
     background: rgba(30, 30, 30, 0.95);
   }
