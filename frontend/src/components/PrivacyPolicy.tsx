@@ -4,74 +4,73 @@ export function PrivacyPolicy() {
   return (
     <div className="privacy-container">
       <div className="privacy-content">
-        <h1>Privacy Policy</h1>
+        <div className="privacy-header">
+          <h1>Privacy Policy</h1>
+          <a href="/" className="close-button" aria-label="Close">×</a>
+        </div>
         <p className="last-updated">Last updated: November 25, 2026</p>
 
         <section>
-          <h2>1. What We Collect</h2>
-          <p>NOTAM Studio is a simple, privacy-focused tool. We only process the NOTAM text you paste into our service to parse and display geometry. <strong>We do not store your data, track you, or collect any personal information.</strong></p>
+          <h2>1. Overview</h2>
+          <p>NOTAM Studio is a privacy-first tool designed for aviation professionals. We believe in transparency and simplicity. <strong>We do not track you, store your data, or sell your information.</strong></p>
         </section>
 
         <section>
-          <h2>2. How It Works</h2>
-          <p>When you paste NOTAM text:</p>
+          <h2>2. Data Handling</h2>
+          <p>When you use NOTAM Studio:</p>
           <ul>
-            <li>The text is sent to our server for parsing</li>
-            <li>The geometry is extracted and sent back to your browser</li>
-            <li>Nothing is saved or logged</li>
-          </ul>
-          <p>That's it. No tracking, no cookies, no data collection.</p>
-        </section>
-
-        <section>
-          <h2>3. Using Our Service & Content</h2>
-          <p><strong>YOU ARE FREE TO USE NOTAM STUDIO AND SHARE IT IN YOUR CONTENT!</strong></p>
-          <p>You may:</p>
-          <ul>
-            <li>? Use this tool for your aviation work</li>
-            <li>? Share screenshots or results in your content (videos, articles, social media)</li>
-            <li>? Reference or mention NOTAM Studio in your projects</li>
-          </ul>
-          <p className="credit-requirement"><strong>REQUIREMENT: You MUST give credit to @Sfaisalafridi</strong></p>
-          <p>When using our service or content in your work, you must:</p>
-          <ul>
-            <li>Mention <strong>@Sfaisalafridi</strong> (or link to <a href="https://x.com/Sfaisalafridi" target="_blank" rel="noopener noreferrer">https://x.com/Sfaisalafridi</a>)</li>
-            <li>Include the website name: <strong>NOTAM Studio</strong></li>
+            <li><strong>Input Data:</strong> The NOTAM text you paste is processed in real-time to extract geometry. It is not saved to any database.</li>
+            <li><strong>Local Processing:</strong> Whenever possible, calculations are done locally or ephemerally on our servers.</li>
+            <li><strong>No Cookies:</strong> We do not use tracking cookies or third-party analytics pixels.</li>
           </ul>
         </section>
 
         <section>
-          <h2>4. Copyright Protection</h2>
+          <h2>3. Usage Rights & Credits</h2>
+          <div className="usage-card">
+            <h3>? You Are Free To:</h3>
+            <ul>
+              <li>Use this tool for personal or commercial aviation projects.</li>
+              <li>Share screenshots, maps, and results in your reports, videos, or social media.</li>
+              <li>Integrate the outputs into your workflow.</li>
+            </ul>
+            
+            <div className="credit-requirement">
+              <h3>?? Requirement: Give Credit</h3>
+              <p>If you use NOTAM Studio in your public content (videos, articles, posts), you <strong>MUST</strong> credit the creator:</p>
+              <div className="credit-box">
+                <p>Created by <strong>@Sfaisalafridi</strong></p>
+                <a href="https://x.com/Sfaisalafridi" target="_blank" rel="noopener noreferrer">https://x.com/Sfaisalafridi</a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2>4. Copyright Notice</h2>
           <p className="warning">
-            <strong>?? WARNING: Using our service, algorithms, or content WITHOUT giving proper credit to @Sfaisalafridi is copyright infringement and will result in legal action.</strong>
+            <strong>?? COPYRIGHT WARNING</strong><br/>
+            The algorithms, design, and code of NOTAM Studio are the intellectual property of @Sfaisalafridi. 
+            <strong>Unauthorized copying, reproduction, or use without credit is strictly prohibited and constitutes copyright infringement.</strong>
+            We actively monitor for unauthorized use and will take legal action against violators.
           </p>
-          <p>You MAY NOT:</p>
-          <ul>
-            <li>? Copy our code, algorithms, or design without permission</li>
-            <li>? Use our service in your content WITHOUT crediting @Sfaisalafridi</li>
-            <li>? Claim our work as your own</li>
-            <li>? Remove or hide our branding</li>
-          </ul>
-          <p>All intellectual property rights belong to NOTAM Studio and are protected by copyright law.</p>
         </section>
 
         <section>
-          <h2>5. Changes to This Policy</h2>
-          <p>We may update this policy. Check back occasionally for changes.</p>
-        </section>
-
-        <section>
-          <h2>6. Contact</h2>
-          <p>Questions? Need permission for special use cases?</p>
-          <p>
-            <a href="https://x.com/Sfaisalafridi" target="_blank" rel="noopener noreferrer" className="contact-link">
-              Contact @Sfaisalafridi on X (Twitter)
+          <h2>5. Contact & Permissions</h2>
+          <p>For permission requests, feature suggestions, or privacy questions, please contact the creator directly:</p>
+          <div className="contact-section">
+            <a href="https://x.com/Sfaisalafridi" target="_blank" rel="noopener noreferrer" className="contact-button">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+              </svg>
+              Message @Sfaisalafridi
             </a>
-          </p>
+          </div>
         </section>
 
-        <div className="back-link">
-          <a href="/">? Back to NOTAM Studio</a>
+        <div className="back-link-container">
+          <a href="/" className="back-button">? Back to Map</a>
         </div>
       </div>
     </div>

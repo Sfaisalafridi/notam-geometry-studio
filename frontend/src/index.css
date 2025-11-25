@@ -84,3 +84,9 @@ body {
   min-height: 100px;
   resize: vertical;
 }
+
+/* Move Leaflet controls up to avoid footer overlap */
+.leaflet-bottom {
+  bottom: 50px !important;
+}
+
