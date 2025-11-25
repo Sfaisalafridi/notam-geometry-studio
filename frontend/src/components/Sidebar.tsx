@@ -41,7 +41,7 @@ export const Sidebar: React.FC<Props> = ({ notams, setNotams, onSelect, onExport
         setLoading(true);
         setStatus('Parsing...');
         try {
-            const response = await axios.post('${import.meta.env.VITE_API_URL || "http://localhost:8000"}/api/parse', { text: textInput });
+            const response = await axios.post('`${import.meta.env.VITE_API_URL || "http://localhost:8000"}/api/parse`', { text: textInput });
             const result = response.data;
 
             const newNotams = result.results.map((item: any) => ({
