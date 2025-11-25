@@ -18,7 +18,7 @@ export function Footer() {
         <span className="separator">•</span>
         <a href="/privacy" className="privacy-link">Privacy Policy</a>
         <span className="separator">•</span>
-        <span className="copyright">© 2024 NOTAM Studio</span>
+        <span className="copyright">© 2026 NOTAM Studio</span>
       </div>
     </div>
   );

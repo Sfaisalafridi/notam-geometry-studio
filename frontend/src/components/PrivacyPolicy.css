@@ -104,3 +104,16 @@
     font-size: 20px;
   }
 }
+
+.privacy-content .warning {
+  background: rgba(255, 152, 0, 0.1);
+  border-left: 4px solid #ff9800;
+  padding: 15px;
+  border-radius: 8px;
+  margin: 20px 0;
+  color: #ffb74d;
+}
+
+.privacy-content .warning strong {
+  color: #ffa726;
+}

@@ -5,7 +5,7 @@ export function PrivacyPolicy() {
     <div className="privacy-container">
       <div className="privacy-content">
         <h1>Privacy Policy</h1>
-        <p className="last-updated">Last updated: November 25, 2024</p>
+        <p className="last-updated">Last updated: November 25, 2026</p>
 
         <section>
           <h2>1. Information We Collect</h2>
@@ -45,7 +45,21 @@ export function PrivacyPolicy() {
         </section>
 
         <section>
-          <h2>6. Your Rights</h2>
+          <h2>6. Intellectual Property and Copyright</h2>
+          <p><strong>All content, features, and functionality of NOTAM Studio (including but not limited to software, algorithms, design, text, graphics, and logos) are the exclusive property of NOTAM Studio and are protected by international copyright, trademark, and other intellectual property laws.</strong></p>
+          <p>You may not:</p>
+          <ul>
+            <li>Copy, reproduce, or redistribute any part of our service without explicit written permission</li>
+            <li>Use our content, algorithms, or design elements in your own projects or services</li>
+            <li>Remove or modify any copyright notices, trademarks, or proprietary markings</li>
+            <li>Reverse engineer, decompile, or attempt to extract the source code</li>
+          </ul>
+          <p className="warning"><strong>?? Unauthorized use of this service's content, algorithms, or any other intellectual property without proper attribution and written permission may result in legal action for copyright infringement, including but not limited to civil and criminal penalties under applicable copyright laws.</strong></p>
+          <p>If you wish to use any content from NOTAM Studio, please contact us for permission at <a href="https://x.com/Sfaisalafridi" target="_blank" rel="noopener noreferrer">@Sfaisalafridi</a>.</p>
+        </section>
+
+        <section>
+          <h2>7. Your Rights</h2>
           <p>You have the right to:</p>
           <ul>
             <li>Access the information we hold about you</li>
@@ -56,18 +70,18 @@ export function PrivacyPolicy() {
         </section>
 
         <section>
-          <h2>7. Children's Privacy</h2>
+          <h2>8. Children's Privacy</h2>
           <p>Our service is not directed to individuals under the age of 13. We do not knowingly collect personal information from children.</p>
         </section>
 
         <section>
-          <h2>8. Changes to This Policy</h2>
+          <h2>9. Changes to This Policy</h2>
           <p>We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last updated" date.</p>
         </section>
 
         <section>
-          <h2>9. Contact Us</h2>
-          <p>If you have any questions about this Privacy Policy, please contact us:</p>
+          <h2>10. Contact Us</h2>
+          <p>If you have any questions about this Privacy Policy or wish to request permission to use our content, please contact us:</p>
           <p>
             <a href="https://x.com/Sfaisalafridi" target="_blank" rel="noopener noreferrer">
               @Sfaisalafridi on X (Twitter)

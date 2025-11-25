@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { MapComponent } from './components/MapComponent';
 import { Footer } from './components/Footer';
@@ -14,16 +14,37 @@ function App() {
   const mapRef = useRef<HTMLDivElement>(null);
 
   // Simple client-side routing
-  useState(() => {
-    const path = window.location.pathname;
-    if (path === '/privacy') {
-      setShowPrivacy(true);
-    }
+  useEffect(() => {
+    const checkRoute = () => {
+      const path = window.location.pathname;
+      setShowPrivacy(path === '/privacy');
+    };
 
-    window.addEventListener('popstate', () => {
-      setShowPrivacy(window.location.pathname === '/privacy');
-    });
-  });
+    checkRoute();
+
+    window.addEventListener('popstate', checkRoute);
+    
+    // Handle link clicks
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'A' && target.getAttribute('href') === '/privacy') {
+        e.preventDefault();
+        window.history.pushState({}, '', '/privacy');
+        setShowPrivacy(true);
+      } else if (target.tagName === 'A' && target.getAttribute('href') === '/') {
+        e.preventDefault();
+        window.history.pushState({}, '', '/');
+        setShowPrivacy(false);
+      }
+    };
+
+    document.addEventListener('click', handleClick);
+
+    return () => {
+      window.removeEventListener('popstate', checkRoute);
+      document.removeEventListener('click', handleClick);
+    };
+  }, []);
 
   const handleExport = () => {
     if (mapRef.current) {
