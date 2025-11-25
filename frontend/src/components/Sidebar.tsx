@@ -41,7 +41,7 @@ export const Sidebar: React.FC<Props> = ({ notams, setNotams, onSelect, onExport
         setLoading(true);
         setStatus('Parsing...');
         try {
-            const response = await axios.post("https://notam-geometry-studio.vercel.app/api/parse", { text: textInput });
+            const response = await axios.post("https://web-production-8c73.up.railway.app/api/parse", { text: textInput });
             const result = response.data;
 
             const newNotams = result.results.map((item: any) => ({
