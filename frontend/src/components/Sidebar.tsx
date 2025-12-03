@@ -12,6 +12,35 @@ interface Props {
 }
 
 export const Sidebar: React.FC<Props> = ({ notams, setNotams, onSelect, onExport }) => {
+    const exportKML = async () => {
+        try {
+            const response = await axios.post('https://web-production-8c73.up.railway.app/api/export/kml', {
+                notams: notams.map(n => ({
+                    geometry: n.geometry,
+                    altitude: n.altitude,
+                    ids: n.ids,
+                    description: n.description,
+                    raw_text: n.raw_text
+                }))
+            }, {
+                responseType: 'blob'
+            });
+            
+            const blob = new Blob([response.data], { type: 'application/vnd.google-earth.kml+xml' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `notams_${
+ew Date().toISOString().replace(/[:.]/g, '-')}.kml`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (error) {
+            console.error('KML export failed:', error);
+            alert('Failed to export KML. Please try again.');
+        }
+    };
     const [activeTab, setActiveTab] = useState<'input' | 'list'>('input');
     const [textInput, setTextInput] = useState('');
     const [loading, setLoading] = useState(false);
