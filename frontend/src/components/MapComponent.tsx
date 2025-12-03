@@ -278,6 +278,19 @@ export const MapComponent: React.FC<Props> = ({ notams, selectedId }) => {
                             </Polyline>
                         )}
 
+                                                {type === 'multiline' && (
+                            <Polyline positions={latlngs as any} pathOptions={{ color, weight: 4 }}>
+                                <Popup>
+                                    <div style={{ color: 'black' }}>
+                                        <strong>{notam.ids.join(', ') || 'Unknown ID'}</strong><br />
+                                        Route Segments<br />
+                                        {notam.altitude.lower} - {notam.altitude.upper}
+                                        {notam.description && <div style={{ marginTop: '5px', fontSize: '0.9em', borderTop: '1px solid #ccc', paddingTop: '5px' }}>{notam.description}</div>}
+                                    </div>
+                                </Popup>
+                            </Polyline>
+                        )}
+
                         {type === 'point' && latlngs.length > 0 && (
                             <Marker position={latlngs[0]}>
                                 <Popup>
