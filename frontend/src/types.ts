@@ -4,7 +4,7 @@ export interface Coordinate {
 }
 
 export interface Geometry {
-    type: 'polygon' | 'circle' | 'line' | 'point' | 'unknown';
+    type: 'polygon' | 'circle' | 'line' | 'multiline' | 'point' | 'unknown';
     coordinates: number[][]; // [lat, lng]
     radius_nm?: number;
 }
