@@ -216,6 +216,42 @@ class NotamParser:
                 
         return segments
 
+    def is_route_notam(self, text: str) -> bool:
+        """
+        Detect if NOTAM describes route segments rather than areas.
+        Returns True if this is clearly a route NOTAM.
+        """
+        text_upper = text.upper()
+        
+        # Strong route indicators
+        route_keywords = [
+            "RTE SEGMENTS",
+            "ROUTE SEGMENTS", 
+            "ATS RTE",
+            "ATS ROUTE",
+            "AIRWAY",
+            "FLW RTE",
+            "FOLLOWING ROUTE",
+            "FOLLOWING ROUTES",
+            "SEGMENTS OF",
+            "ROUTE PORTION",
+            "AIRWAY PORTION"
+        ]
+        
+        for keyword in route_keywords:
+            if keyword in text_upper:
+                return True
+        
+        # Check for route designators (A123, J456, G789, etc.)
+        route_pattern = r'\b[A-Z]\d{2,3}\b'
+        route_matches = re.findall(route_pattern, text)
+        
+        # If we find multiple route designators, likely a route NOTAM
+        if len(route_matches) >= 2:
+            return True
+            
+        return False
+    
     def parse(self, text: str) -> Dict[str, Any]:
         coords = self.extract_coordinates(text)
         radius = self.extract_radius(text)
@@ -226,32 +262,39 @@ class NotamParser:
         geometry_type = "point"
         q_data = self.parse_q_line(text)
         
-        # Priority 1: Route Segments
+        # Check if this is a route NOTAM
+        is_route = self.is_route_notam(text)
+        
+        # Priority 1: Route Segments (ABSOLUTE PRIORITY)
         route_segments = self.extract_route_segments(text)
         
-        if route_segments:
-            geometry_type = "multiline"
-            coords = route_segments
-            radius = None # Ensure radius is cleared
+        if route_segments or is_route:
+            # If we detected route keywords OR found route segments
+            if route_segments:
+                geometry_type = "multiline"
+                coords = route_segments
+                radius = None
+            else:
+                # Route NOTAM but couldn't parse segments - return empty to avoid false area
+                geometry_type = "line"
+                coords = []
+                radius = None
         
-        # Priority 2: Area (Polygon)
-        elif len(coords) > 2:
+        # Priority 2: Explicit Radius (Circle) - MUST have explicit radius keyword
+        elif radius and len(coords) >= 1:
+            geometry_type = "circle"
+            coords = [coords[0]]
+            
+        # Priority 3: Area (Polygon) - Only if we have explicit coordinates AND not a route
+        elif len(coords) > 2 and not is_route:
             geometry_type = "polygon"
             # Close polygon if needed
             if coords[0] != coords[-1]:
-                if not ("ROUTE" in text.upper() or "AIRWAY" in text.upper()):
-                     coords.append(coords[0])
+                coords.append(coords[0])
             radius = None
-
-        # Priority 3: Radius (Circle)
-        elif radius and len(coords) >= 1:
-            geometry_type = "circle"
-            # Use the first coordinate as center
-            coords = [coords[0]]
             
-        # Priority 3b: Q-line Circle (Fallback if explicit radius not found but Q-line has it)
-        elif q_data:
-            # If we haven't found a polygon or explicit circle, use Q-line
+        # Priority 4: Q-line Circle (Fallback)
+        elif q_data and not is_route:
             coords = q_data["coordinates"]
             radius = q_data["radius_nm"]
             geometry_type = "circle"
@@ -263,21 +306,22 @@ class NotamParser:
             
             target_fir = issuing_fir
             
-            if radius >= 50 and target_fir:
+            # Only convert to FIR polygon if radius is very large (999 = entire FIR)
+            if radius >= 999 and target_fir:
                 fir_poly = get_fir_boundary(target_fir)
                 if fir_poly:
                     coords = fir_poly
                     geometry_type = "polygon"
                     radius = None
         
-        # Priority 4: FIR Boundary (if only FL restriction)
-        elif len(coords) == 0:
-             # Try to find FIR
+        # Priority 5: FIR Boundary (if only FL restriction and no other geometry)
+        elif len(coords) == 0 and not is_route:
             issuing_fir = None
             q_match = re.search(r'Q\)\s*([A-Z]{4})/', text)
             if q_match: issuing_fir = q_match.group(1)
             
-            if issuing_fir:
+            # Only use FIR boundary if this is clearly a FIR-wide restriction
+            if issuing_fir and ("FIR" in text.upper() or "FLIGHT INFORMATION REGION" in text.upper()):
                 fir_poly = get_fir_boundary(issuing_fir)
                 if fir_poly:
                     coords = fir_poly
