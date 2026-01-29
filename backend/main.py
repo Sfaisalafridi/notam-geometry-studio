@@ -2,13 +2,11 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-from parser_universal import NotamParser
+from .parser_universal import NotamParser
 from typing import List, Dict, Any
 import uvicorn
 import os
 import sys
-# Ensure backend directory is in python path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from datetime import datetime
 
