@@ -3,6 +3,7 @@ import Tesseract from 'tesseract.js';
 import { Upload, Layers, Eye, EyeOff, Trash2, Map, ShieldAlert, Cpu } from 'lucide-react';
 import axios from 'axios';
 import type { Notam } from '../types';
+import { parseLocal } from '../localParser';
 
 // The URL is now strictly managed by the ConnectionWizard/App.tsx flow
 // But we still need a fallback for type safety, though it should be guaranteed by App
