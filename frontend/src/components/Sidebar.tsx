@@ -144,6 +144,24 @@ export const Sidebar: React.FC<Props> = ({ notams, setNotams, onSelect, onExport
 
             {/* Content Area */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
+                <div style={{ marginBottom: '10px' }}>
+                    <button
+                        onClick={async () => {
+                            setStatus('Testing Connection...');
+                            try {
+                                await axios.get(API_BASE_URL);
+                                setStatus('Online! Backend is reachable.');
+                                alert('Success: Backend is Online!');
+                            } catch (e: any) {
+                                setStatus('Offline or Blocked');
+                                alert(`Failed: ${e.message}\n${e.response?.status || ''}`);
+                            }
+                        }}
+                        style={{ fontSize: '0.7rem', padding: '4px', width: '100%', background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', cursor: 'pointer' }}
+                    >
+                        Test Server Connection
+                    </button>
+                </div>
                 {activeTab === 'input' && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         {/* Upload Box */}
