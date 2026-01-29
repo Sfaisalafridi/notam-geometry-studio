@@ -4,6 +4,8 @@ import { Upload, Layers, Eye, EyeOff, Download, Trash2 } from 'lucide-react';
 import axios from 'axios';
 import type { Notam } from '../types';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://grand-flow.up.railway.app';
+
 interface Props {
     notams: Notam[];
     setNotams: React.Dispatch<React.SetStateAction<Notam[]>>;
@@ -14,7 +16,7 @@ interface Props {
 export const Sidebar: React.FC<Props> = ({ notams, setNotams, onSelect, onExport }) => {
     const exportKML = async () => {
         try {
-            const response = await axios.post('https://web-production-8c73.up.railway.app/api/export/kml', {
+            const response = await axios.post(`${API_BASE_URL}/api/export/kml`, {
                 notams: notams.map(n => ({
                     geometry: n.geometry,
                     altitude: n.altitude,
@@ -70,7 +72,7 @@ ew Date().toISOString().replace(/[:.]/g, '-')}.kml`;
         setLoading(true);
         setStatus('Parsing...');
         try {
-            const response = await axios.post("https://web-production-8c73.up.railway.app/api/parse", { text: textInput });
+            const response = await axios.post(`${API_BASE_URL}/api/parse`, { text: textInput });
             const result = response.data;
 
             const newNotams = result.results.map((item: any) => ({
@@ -238,7 +240,7 @@ ew Date().toISOString().replace(/[:.]/g, '-')}.kml`;
         setLoading(true);
         setStatus('Parsing...');
         try {
-            const response = await axios.post("https://web-production-8c73.up.railway.app/api/parse", { text: textInput });
+            const response = await axios.post(`${API_BASE_URL}/api/parse`, { text: textInput });
             const result = response.data;
 
             const newNotams = result.results.map((item: any) => ({
