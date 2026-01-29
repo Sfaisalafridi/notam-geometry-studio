@@ -70,12 +70,23 @@ export const Sidebar: React.FC<Props> = ({ notams, setNotams, onSelect, onExport
                 onSelect(newNotams[0].id);
             }
         } catch (err: any) {
-            console.error(err);
-            const msg = axios.isAxiosError(err)
-                ? `Server Error (${err.response?.status})`
-                : 'Parsing Logic Failure';
+            console.error('Parsing Error:', err);
+            let msg = 'Unknown Error';
+
+            if (axios.isAxiosError(err)) {
+                if (!err.response) {
+                    msg = 'Network Error - Cannot reach backend';
+                } else {
+                    const status = err.response.status;
+                    const detail = err.response.data?.detail || err.message;
+                    msg = `Server Error [${status}]: ${detail}`;
+                }
+            } else {
+                msg = `Client Error: ${err.message}`;
+            }
+
             setStatus(msg);
-            alert(`Parsing Failed: ${msg}\n\nCheck the backend logs.`);
+            alert(`Parsing Failed!\n\n${msg}\n\nTroubleshooting:\n1. Check internet connection.\n2. Backend may be waking up (wait 30s).\n3. Check console for details.`);
         } finally {
             setLoading(false);
         }
