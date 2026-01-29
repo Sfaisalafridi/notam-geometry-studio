@@ -27,13 +27,13 @@ export const Sidebar: React.FC<Props> = ({ notams, setNotams, onSelect, onExport
             }, {
                 responseType: 'blob'
             });
-            
+
             const blob = new Blob([response.data], { type: 'application/vnd.google-earth.kml+xml' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `notams_${
-ew Date().toISOString().replace(/[:.]/g, '-')}.kml`;
+            a.download = `notams_${ew Date().toISOString().replace(/[:.]/g, '-')
+        }.kml`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
@@ -45,9 +45,20 @@ ew Date().toISOString().replace(/[:.]/g, '-')}.kml`;
     };
     const [activeTab, setActiveTab] = useState<'input' | 'list'>('input');
     const [textInput, setTextInput] = useState('');
+    const [showSettings, setShowSettings] = useState(false);
+    const [customUrl, setCustomUrl] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('custom_backend_url') : '') || '');
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleSaveSettings = () => {
+        if (customUrl) {
+            localStorage.setItem('custom_backend_url', customUrl.replace(/\/$/, ''));
+        } else {
+            localStorage.removeItem('custom_backend_url');
+        }
+        window.location.reload();
+    };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -72,7 +83,7 @@ ew Date().toISOString().replace(/[:.]/g, '-')}.kml`;
         setLoading(true);
         setStatus('Parsing...');
         try {
-            const response = await axios.post(`${API_BASE_URL}/api/parse`, { text: textInput });
+            const response = await axios.post(`${ API_BASE_URL } /api/parse`, { text: textInput });
             const result = response.data;
 
             const newNotams = result.results.map((item: any) => ({
@@ -87,7 +98,7 @@ ew Date().toISOString().replace(/[:.]/g, '-')}.kml`;
             }));
 
             setNotams(newNotams);
-            setStatus(`Parsed ${newNotams.length} NOTAMs.`);
+            setStatus(`Parsed ${ newNotams.length } NOTAMs.`);
             setActiveTab('list');
 
             // Auto-select the first new NOTAM to zoom the map
@@ -119,22 +130,42 @@ ew Date().toISOString().replace(/[:.]/g, '-')}.kml`;
 
     return (
         <div className="sidebar" style={{ position: 'relative', zIndex: 1001, width: '350px', height: '100vh', background: '#25262b', borderRight: '1px solid #373a40', display: 'flex', flexDirection: 'column' }}>
-            <div className="header" style={{ padding: '1rem', borderBottom: '1px solid #373a40' }}>
+            <div className="header" style={{ padding: '1rem', borderBottom: '1px solid #373a40', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h2 style={{ margin: 0, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Layers size={20} /> NOTAM Studio
                 </h2>
+                <button onClick={() => setShowSettings(!showSettings)} style={{ background: 'none', border: 'none', color: '#909296', cursor: 'pointer' }} title="Configure Server">
+                    <Settings size={20} />
+                </button>
             </div>
+
+            {showSettings && (
+                <div style={{ padding: '1rem', background: '#2c2e33', borderBottom: '1px solid #373a40' }}>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: '#c1c2c5' }}>Backend URL</label>
+                    <input 
+                        type="text" 
+                        value={customUrl} 
+                        onChange={(e) => setCustomUrl(e.target.value)}
+                        placeholder="https://grand-flow.up.railway.app"
+                        style={{ width: '100%', padding: '0.5rem', marginBottom: '0.5rem', background: '#25262b', border: '1px solid #373a40', color: 'white', borderRadius: '4px' }}
+                    />
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button onClick={handleSaveSettings} style={{ flex: 1, padding: '0.5rem', background: '#339af0', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Save & Reload</button>
+                        <button onClick={() => { localStorage.removeItem('custom_backend_url'); window.location.reload(); }} style={{ padding: '0.5rem', background: '#fa5252', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Reset</button>
+                    </div>
+                </div>
+            )}
 
             <div className="tabs" style={{ display: 'flex', borderBottom: '1px solid #373a40' }}>
                 <button
-                    className={`tab ${activeTab === 'input' ? 'active' : ''}`}
+                    className={`tab ${ activeTab === 'input' ? 'active' : '' } `}
                     onClick={() => setActiveTab('input')}
                     style={{ flex: 1, padding: '10px', background: activeTab === 'input' ? '#2c2e33' : 'transparent', border: 'none', color: 'inherit', cursor: 'pointer' }}
                 >
                     Input
                 </button>
                 <button
-                    className={`tab ${activeTab === 'list' ? 'active' : ''}`}
+                    className={`tab ${ activeTab === 'list' ? 'active' : '' } `}
                     onClick={() => setActiveTab('list')}
                     style={{ flex: 1, padding: '10px', background: activeTab === 'list' ? '#2c2e33' : 'transparent', border: 'none', color: 'inherit', cursor: 'pointer' }}
                 >
@@ -192,7 +223,7 @@ ew Date().toISOString().replace(/[:.]/g, '-')}.kml`;
                         {notams.length === 0 && <div style={{ color: '#909296', textAlign: 'center', marginTop: '2rem' }}>No NOTAMs parsed yet.</div>}
 
                         {notams.map(notam => (
-                            <div key={notam.id} style={{ background: '#2c2e33', padding: '10px', borderRadius: '4px', marginBottom: '10px', borderLeft: `4px solid ${notam.color}` }}>
+                            <div key={notam.id} style={{ background: '#2c2e33', padding: '10px', borderRadius: '4px', marginBottom: '10px', borderLeft: `4px solid ${ notam.color } ` }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '5px' }}>
                                     <strong style={{ cursor: 'pointer' }} onClick={() => onSelect(notam.id)}>
                                         {notam.ids.length > 0 ? notam.ids.join(', ') : 'Unknown ID'}
@@ -247,7 +278,7 @@ ew Date().toISOString().replace(/[:.]/g, '-')}.kml`;
         setLoading(true);
         setStatus('Parsing...');
         try {
-            const response = await axios.post(`${API_BASE_URL}/api/parse`, { text: textInput });
+            const response = await axios.post(`${ API_BASE_URL } /api/parse`, { text: textInput });
             const result = response.data;
 
             const newNotams = result.results.map((item: any) => ({
@@ -262,7 +293,7 @@ ew Date().toISOString().replace(/[:.]/g, '-')}.kml`;
             }));
 
             setNotams(newNotams);
-            setStatus(`Parsed ${newNotams.length} NOTAMs.`);
+            setStatus(`Parsed ${ newNotams.length } NOTAMs.`);
             setActiveTab('list');
 
             // Auto-select the first new NOTAM to zoom the map
@@ -302,14 +333,14 @@ ew Date().toISOString().replace(/[:.]/g, '-')}.kml`;
 
             <div className="tabs" style={{ display: 'flex', borderBottom: '1px solid #373a40' }}>
                 <button
-                    className={`tab ${activeTab === 'input' ? 'active' : ''}`}
+                    className={`tab ${ activeTab === 'input' ? 'active' : '' } `}
                     onClick={() => setActiveTab('input')}
                     style={{ flex: 1, padding: '10px', background: activeTab === 'input' ? '#2c2e33' : 'transparent', border: 'none', color: 'inherit', cursor: 'pointer' }}
                 >
                     Input
                 </button>
                 <button
-                    className={`tab ${activeTab === 'list' ? 'active' : ''}`}
+                    className={`tab ${ activeTab === 'list' ? 'active' : '' } `}
                     onClick={() => setActiveTab('list')}
                     style={{ flex: 1, padding: '10px', background: activeTab === 'list' ? '#2c2e33' : 'transparent', border: 'none', color: 'inherit', cursor: 'pointer' }}
                 >
@@ -367,7 +398,7 @@ ew Date().toISOString().replace(/[:.]/g, '-')}.kml`;
                         {notams.length === 0 && <div style={{ color: '#909296', textAlign: 'center', marginTop: '2rem' }}>No NOTAMs parsed yet.</div>}
 
                         {notams.map(notam => (
-                            <div key={notam.id} style={{ background: '#2c2e33', padding: '10px', borderRadius: '4px', marginBottom: '10px', borderLeft: `4px solid ${notam.color}` }}>
+                            <div key={notam.id} style={{ background: '#2c2e33', padding: '10px', borderRadius: '4px', marginBottom: '10px', borderLeft: `4px solid ${ notam.color } ` }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '5px' }}>
                                     <strong style={{ cursor: 'pointer' }} onClick={() => onSelect(notam.id)}>
                                         {notam.ids.length > 0 ? notam.ids.join(', ') : 'Unknown ID'}
