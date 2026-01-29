@@ -1,3 +1,5 @@
+@import './mobile.css';
+
 :root {
   --bg-dark: #0f172a;
   --bg-card: rgba(30, 41, 59, 0.7);
@@ -98,13 +100,7 @@ body {
 
 /* Glass Panel Utility */
 .glass-panel {
-  background: var(--glass-effect);
+  background: var(--bg-card);
   backdrop-filter: blur(12px);
   border: 1px solid var(--border-color);
-}
-
-@import './mobile.css';
-background: var(--bg-card);
-backdrop-filter: var(--glass-effect);
-border: 1px solid var(--border-color);
 }
