@@ -1,0 +1,76 @@
+.app-footer {
+  position: absolute; /* Changed from fixed to absolute */
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(30, 30, 30, 0.8);
+  backdrop-filter: blur(5px);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 6px 20px;
+  z-index: 900;
+  pointer-events: none;
+}
+
+.footer-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  color: #888;
+  font-size: 12px;
+  pointer-events: auto;
+}
+
+.twitter-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #1DA1F2;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.twitter-link:hover {
+  background: rgba(29, 161, 242, 0.1);
+  color: #1DA1F2;
+  transform: translateY(-1px);
+}
+
+.privacy-link {
+  color: #888;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.privacy-link:hover {
+  color: #fff;
+}
+
+.separator {
+  color: #444;
+}
+
+.copyright {
+  color: #666;
+  display: flex;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .app-footer {
+    padding: 8px;
+    background: rgba(30, 30, 30, 0.95);
+  }
+  
+  .footer-content {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  .separator {
+    display: none;
+  }
+}
