@@ -3,7 +3,7 @@ import { Sidebar } from './components/Sidebar';
 import { MapComponent } from './components/MapComponent';
 import { Footer } from './components/Footer';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
-import { ConnectionWizard } from './components/ConnectionWizard';
+
 import type { Notam } from './types';
 import * as htmlToImage from 'html-to-image';
 import download from 'downloadjs';
@@ -12,7 +12,7 @@ function App() {
   const [notams, setNotams] = useState<Notam[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showPrivacy, setShowPrivacy] = useState(false);
-  const [isVerified, setIsVerified] = useState(false);
+
   const mapRef = useRef<HTMLDivElement>(null);
 
   // Simple client-side routing
@@ -72,9 +72,7 @@ function App() {
     );
   }
 
-  if (!isVerified) {
-    return <ConnectionWizard onConnectionVerified={() => setIsVerified(true)} />;
-  }
+
 
   return (
     <div className="app" style={{ display: 'flex', height: '100vh', width: '100vw' }}>

@@ -6,7 +6,7 @@ import type { Notam } from '../types';
 
 // The URL is now strictly managed by the ConnectionWizard/App.tsx flow
 // But we still need a fallback for type safety, though it should be guaranteed by App
-const API_BASE_URL = (typeof window !== 'undefined' ? localStorage.getItem('custom_backend_url') : null) || 'https://grand-flow.up.railway.app';
+const API_BASE_URL = 'https://grand-flow.up.railway.app';
 
 interface Props {
     notams: Notam[];
