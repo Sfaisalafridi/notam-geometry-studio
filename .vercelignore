@@ -1,0 +1,10 @@
+backend/
+*.py
+Procfile
+requirements.txt
+railway.json
+nixpacks.toml
+render.yaml
+netlify.toml
+venv/
+__pycache__/
