@@ -107,12 +107,25 @@ export const Sidebar: React.FC<Props> = ({ notams, setNotams, onSelect, onExport
             }
         } catch (err) {
             
-            const newUrl = prompt("Backend connection failed! Please paste your Railway URL (e.g., https://grand-flow.up.railway.app):", "https://grand-flow.up.railway.app");
+            
             if (newUrl) {
                 localStorage.setItem('custom_backend_url', newUrl.replace(/\/$/, ''));
                 window.location.reload();
             }
-            setStatus('Parsing failed. Is backend running?');
+            
+            console.error(err);
+            const errMsg = axios.isAxiosError(err) 
+                ? `Connection Error: ${err.response?.status || 'Network Failed'} at ${API_BASE_URL}`
+                : `Error: ${String(err)}`;
+            
+            setStatus(errMsg);
+            
+            const newUrl = prompt(`CONNECTION FAILED! \nDetails: ${errMsg}\n\nPlease verify your Railway URL and paste it below:`, API_BASE_URL);
+            if (newUrl) {
+                localStorage.setItem('custom_backend_url', newUrl.replace(/\/$/, ''));
+                window.location.reload();
+            }
+
 
             console.error(err);
         } finally {
@@ -302,12 +315,25 @@ export const Sidebar: React.FC<Props> = ({ notams, setNotams, onSelect, onExport
             }
         } catch (err) {
             
-            const newUrl = prompt("Backend connection failed! Please paste your Railway URL (e.g., https://grand-flow.up.railway.app):", "https://grand-flow.up.railway.app");
+            
             if (newUrl) {
                 localStorage.setItem('custom_backend_url', newUrl.replace(/\/$/, ''));
                 window.location.reload();
             }
-            setStatus('Parsing failed. Is backend running?');
+            
+            console.error(err);
+            const errMsg = axios.isAxiosError(err) 
+                ? `Connection Error: ${err.response?.status || 'Network Failed'} at ${API_BASE_URL}`
+                : `Error: ${String(err)}`;
+            
+            setStatus(errMsg);
+            
+            const newUrl = prompt(`CONNECTION FAILED! \nDetails: ${errMsg}\n\nPlease verify your Railway URL and paste it below:`, API_BASE_URL);
+            if (newUrl) {
+                localStorage.setItem('custom_backend_url', newUrl.replace(/\/$/, ''));
+                window.location.reload();
+            }
+
 
             console.error(err);
         } finally {
