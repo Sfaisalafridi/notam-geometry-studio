@@ -1,18 +1,9 @@
+```json
 {
   "name": "frontend",
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "dev": "vite",
-  "build": "vite build",
-  "preview": "vite preview"
-},
-"dependencies": {
-  "@types/leaflet": "^1.9.21",
-  "axios": "^1.13.2",
-  "downloadjs": "^1.4.7",
-  "html-to-image": "^1.11.13",
-  "leaflet": "^1.9.4",
   "leaflet-providers": "^3.0.0",
   "lucide-react": "^0.554.0",
   "react": "^19.2.0",
