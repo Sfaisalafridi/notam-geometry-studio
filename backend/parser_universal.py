@@ -201,10 +201,26 @@ class NotamParser:
         # \s*[–-]\s* -> Separator (hyphen or en-dash, optional spaces)
         # ([A-Z]{2,5}) -> End Fix
         
+        # Pattern 1: Route(s) Fix-Fix (Standard)
         pattern = r'(?:[A-Z0-9]+(?:/[A-Z0-9]+)*)\s+([A-Z]{2,5})\s*[–-]\s*([A-Z]{2,5})'
         
-        matches = re.finditer(pattern, text)
-        for m in matches:
+        for m in re.finditer(pattern, text):
+            start_fix = m.group(1)
+            end_fix = m.group(2)
+            
+            start_coords = get_waypoint_coords(start_fix)
+            end_coords = get_waypoint_coords(end_fix)
+            
+            if start_coords and end_coords:
+                segments.append([start_coords, end_coords])
+
+        # Pattern 2: Route BTN Fix AND Fix (Common in closures)
+        # Supports:
+        # J123 BTN AAAA AND BBBB
+        # ATS ROUTE A466 BETWEEN SAKVU AND SAJAN
+        pattern_btn = r'(?:[A-Z0-9]+(?:/[A-Z0-9]+)*)\s+(?:BTN|BETWEEN)\s+([A-Z]{2,5})\s+(?:AND|&)\s+([A-Z]{2,5})'
+        
+        for m in re.finditer(pattern_btn, text, re.IGNORECASE):
             start_fix = m.group(1)
             end_fix = m.group(2)
             
@@ -235,11 +251,17 @@ class NotamParser:
             "FOLLOWING ROUTES",
             "SEGMENTS OF",
             "ROUTE PORTION",
-            "AIRWAY PORTION"
+            "AIRWAY PORTION",
+            "CLSD",   # Added for closure support
+            "CLOSED", # Added for closure support
+            "CLOSURE" # Added for closure support
         ]
         
         for keyword in route_keywords:
             if keyword in text_upper:
+                # Basic check: does it also have a route-like identifier?
+                # Check for A123 or J456 etc adjacent to it?
+                # Or just trust these strong keywords + geometry extraction success.
                 return True
         
         # Check for route designators (A123, J456, G789, etc.)

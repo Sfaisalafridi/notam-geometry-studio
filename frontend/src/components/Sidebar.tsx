@@ -1,10 +1,12 @@
 import React, { useState, useRef } from 'react';
 import Tesseract from 'tesseract.js';
-import { Upload, Layers, Eye, EyeOff, Download, Trash2 } from 'lucide-react';
+import { Upload, Layers, Eye, EyeOff, Trash2, Map, ShieldAlert, Cpu } from 'lucide-react';
 import axios from 'axios';
 import type { Notam } from '../types';
 
-const API_BASE_URL = (typeof window !== 'undefined' ? localStorage.getItem('custom_backend_url') : null) || import.meta.env.VITE_API_URL || 'https://grand-flow.up.railway.app';
+// The URL is now strictly managed by the ConnectionWizard/App.tsx flow
+// But we still need a fallback for type safety, though it should be guaranteed by App
+const API_BASE_URL = (typeof window !== 'undefined' ? localStorage.getItem('custom_backend_url') : null) || 'https://grand-flow.up.railway.app';
 
 interface Props {
     notams: Notam[];
@@ -14,61 +16,21 @@ interface Props {
 }
 
 export const Sidebar: React.FC<Props> = ({ notams, setNotams, onSelect, onExport }) => {
-    const exportKML = async () => {
-        try {
-            const response = await axios.post(`${API_BASE_URL}/api/export/kml`, {
-                notams: notams.map(n => ({
-                    geometry: n.geometry,
-                    altitude: n.altitude,
-                    ids: n.ids,
-                    description: n.description,
-                    raw_text: n.raw_text
-                }))
-            }, {
-                responseType: 'blob'
-            });
-
-            const blob = new Blob([response.data], { type: 'application/vnd.google-earth.kml+xml' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `notams_${new Date().toISOString().replace(/[:.]/g, '-')
-                }.kml`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-        } catch (error) {
-            console.error('KML export failed:', error);
-            alert('Failed to export KML. Please try again.');
-        }
-    };
     const [activeTab, setActiveTab] = useState<'input' | 'list'>('input');
     const [textInput, setTextInput] = useState('');
-    const [showSettings, setShowSettings] = useState(false);
-    const [customUrl, setCustomUrl] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('custom_backend_url') : '') || '');
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
-
-    const handleSaveSettings = () => {
-        if (customUrl) {
-            localStorage.setItem('custom_backend_url', customUrl.replace(/\/$/, ''));
-        } else {
-            localStorage.removeItem('custom_backend_url');
-        }
-        window.location.reload();
-    };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
             setLoading(true);
-            setStatus('Running OCR...');
+            setStatus('Scanning Image (OCR)...');
             try {
                 const { data: { text } } = await Tesseract.recognize(file, 'eng');
                 setTextInput(text);
-                setStatus('OCR Complete. Please verify text.');
+                setStatus('OCR Complete. Ready to parse.');
             } catch (err) {
                 setStatus('OCR Failed.');
                 console.error(err);
@@ -81,9 +43,11 @@ export const Sidebar: React.FC<Props> = ({ notams, setNotams, onSelect, onExport
     const handleParse = async () => {
         if (!textInput.trim()) return;
         setLoading(true);
-        setStatus('Parsing...');
+        setStatus('Analyzing Flight Data...');
         try {
-            const response = await axios.post(`${API_BASE_URL} /api/parse`, { text: textInput });
+            // Remove trailing slash if present for safety
+            const safeBase = API_BASE_URL.replace(/\/$/, '');
+            const response = await axios.post(`${safeBase}/api/parse`, { text: textInput });
             const result = response.data;
 
             const newNotams = result.results.map((item: any) => ({
@@ -94,36 +58,24 @@ export const Sidebar: React.FC<Props> = ({ notams, setNotams, onSelect, onExport
                 description: item.description,
                 ids: item.ids,
                 visible: true,
-                color: '#fa5252'
+                color: item.geometry.type === 'multiline' ? '#06b6d4' : '#f43f5e'
             }));
 
-            setNotams(newNotams);
-            setStatus(`Parsed ${newNotams.length} NOTAMs.`);
+            setNotams(prev => [...newNotams, ...prev]);
+
+            setStatus(`Successfully extracted ${newNotams.length} geometries.`);
             setActiveTab('list');
 
-            // Auto-select the first new NOTAM to zoom the map
             if (newNotams.length > 0) {
                 onSelect(newNotams[0].id);
             }
-        } catch (err) {
-
-
-
+        } catch (err: any) {
             console.error(err);
-            const errMsg = axios.isAxiosError(err)
-                ? `Connection Error: ${err.response?.status || 'Network Failed'} at ${API_BASE_URL}`
-                : `Error: ${String(err)}`;
-
-            setStatus(errMsg);
-
-            const newUrl = prompt(`CONNECTION FAILED! \nDetails: ${errMsg}\n\nPlease verify your Railway URL and paste it below:`, API_BASE_URL);
-            if (newUrl) {
-                localStorage.setItem('custom_backend_url', newUrl.replace(/\/$/, ''));
-                window.location.reload();
-            }
-
-
-            console.error(err);
+            const msg = axios.isAxiosError(err)
+                ? `Server Error (${err.response?.status})`
+                : 'Parsing Logic Failure';
+            setStatus(msg);
+            alert(`Parsing Failed: ${msg}\n\nCheck the backend logs.`);
         } finally {
             setLoading(false);
         }
@@ -138,340 +90,185 @@ export const Sidebar: React.FC<Props> = ({ notams, setNotams, onSelect, onExport
     };
 
     return (
-        <div className="sidebar" style={{ position: 'relative', zIndex: 1001, width: '350px', height: '100vh', background: '#25262b', borderRight: '1px solid #373a40', display: 'flex', flexDirection: 'column' }}>
-            <div className="header" style={{ padding: '1rem', borderBottom: '1px solid #373a40', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h2 style={{ margin: 0, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Layers size={20} /> NOTAM Studio <span style={{ fontSize: '0.8rem', opacity: 0.5 }}>v1.2</span>
+        <div className="sidebar" style={{
+            width: '380px', height: '100vh',
+            background: 'var(--bg-card)',
+            backdropFilter: 'var(--glass-effect)',
+            borderRight: '1px solid var(--border-color)',
+            display: 'flex', flexDirection: 'column',
+            boxShadow: '4px 0 20px rgba(0,0,0,0.4)',
+            zIndex: 1000
+        }}>
+            {/* Header */}
+            <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border-color)', background: 'rgba(15, 23, 42, 0.6)' }}>
+                <h2 style={{ margin: 0, fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
+                    <Layers size={22} className="text-cyan-400" style={{ color: 'var(--accent-primary)' }} />
+                    NOTAM Studio <span style={{ fontSize: '0.7rem', background: 'var(--accent-primary)', color: '#000', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>2.0</span>
                 </h2>
-                <button onClick={() => setShowSettings(!showSettings)} style={{ background: 'none', border: 'none', color: '#909296', cursor: 'pointer' }} title="Configure Server">
-                    <Settings size={20} />
-                </button>
-            </div>
-
-            {showSettings && (
-                <div style={{ padding: '1rem', background: '#2c2e33', borderBottom: '1px solid #373a40' }}>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: '#c1c2c5' }}>Backend URL</label>
-                    <input
-                        type="text"
-                        value={customUrl}
-                        onChange={(e) => setCustomUrl(e.target.value)}
-                        placeholder="https://grand-flow.up.railway.app"
-                        style={{ width: '100%', padding: '0.5rem', marginBottom: '0.5rem', background: '#25262b', border: '1px solid #373a40', color: 'white', borderRadius: '4px' }}
-                    />
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button onClick={handleSaveSettings} style={{ flex: 1, padding: '0.5rem', background: '#339af0', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Save & Reload</button>
-                        <button onClick={() => { localStorage.removeItem('custom_backend_url'); window.location.reload(); }} style={{ padding: '0.5rem', background: '#fa5252', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Reset</button>
-                    </div>
+                <div style={{ display: 'flex', gap: '8px', marginTop: '0.75rem' }}>
+                    <button
+                        onClick={() => setActiveTab('input')}
+                        style={{
+                            flex: 1, padding: '8px', borderRadius: '6px', border: 'none', cursor: 'pointer',
+                            background: activeTab === 'input' ? 'var(--accent-primary)' : 'transparent',
+                            color: activeTab === 'input' ? '#000' : 'var(--text-secondary)',
+                            fontWeight: 600, fontSize: '0.85rem', transition: 'all 0.2s'
+                        }}
+                    >
+                        Input Data
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('list')}
+                        style={{
+                            flex: 1, padding: '8px', borderRadius: '6px', border: 'none', cursor: 'pointer',
+                            background: activeTab === 'list' ? 'var(--accent-primary)' : 'transparent',
+                            color: activeTab === 'list' ? '#000' : 'var(--text-secondary)',
+                            fontWeight: 600, fontSize: '0.85rem', transition: 'all 0.2s'
+                        }}
+                    >
+                        Active ({notams.length})
+                    </button>
                 </div>
-            )}
-
-            <div className="tabs" style={{ display: 'flex', borderBottom: '1px solid #373a40' }}>
-                <button
-                    className={`tab ${activeTab === 'input' ? 'active' : ''} `}
-                    onClick={() => setActiveTab('input')}
-                    style={{ flex: 1, padding: '10px', background: activeTab === 'input' ? '#2c2e33' : 'transparent', border: 'none', color: 'inherit', cursor: 'pointer' }}
-                >
-                    Input
-                </button>
-                <button
-                    className={`tab ${activeTab === 'list' ? 'active' : ''} `}
-                    onClick={() => setActiveTab('list')}
-                    style={{ flex: 1, padding: '10px', background: activeTab === 'list' ? '#2c2e33' : 'transparent', border: 'none', color: 'inherit', cursor: 'pointer' }}
-                >
-                    List ({notams.length})
-                </button>
             </div>
 
-            <div className="content" style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
+            {/* Content Area */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
                 {activeTab === 'input' && (
-                    <div className="input-panel">
-                        <div className="input-group">
-                            <label className="input-label">Upload Image</label>
-                            <div
-                                onClick={() => fileInputRef.current?.click()}
-                                style={{ border: '2px dashed #373a40', padding: '2rem', textAlign: 'center', cursor: 'pointer', borderRadius: '4px', color: '#909296' }}
-                            >
-                                <Upload size={24} style={{ marginBottom: '0.5rem' }} />
-                                <div>Click to upload NOTAM/NAVAREA image</div>
-                            </div>
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                onChange={handleFileUpload}
-                                style={{ display: 'none' }}
-                                accept="image/*"
-                            />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        {/* Upload Box */}
+                        <div
+                            onClick={() => fileInputRef.current?.click()}
+                            style={{
+                                border: '2px dashed var(--border-color)',
+                                padding: '2rem', textAlign: 'center', cursor: 'pointer', borderRadius: '12px',
+                                color: 'var(--text-secondary)', transition: 'border-color 0.2s',
+                                background: 'rgba(255,255,255,0.02)'
+                            }}
+                            onMouseOver={(e) => e.currentTarget.style.borderColor = 'var(--accent-primary)'}
+                            onMouseOut={(e) => e.currentTarget.style.borderColor = 'var(--border-color)'}
+                        >
+                            <Upload size={32} style={{ marginBottom: '0.75rem', color: 'var(--accent-primary)' }} />
+                            <div style={{ fontWeight: 500 }}>Upload NOTAM Image</div>
+                            <div style={{ fontSize: '0.8rem', opacity: 0.7, marginTop: '4px' }}>Supports JPG, PNG (Auto-OCR)</div>
                         </div>
+                        <input type="file" ref={fileInputRef} onChange={handleFileUpload} style={{ display: 'none' }} accept="image/*" />
 
-                        <div className="input-group">
-                            <label className="input-label">Or Paste Text</label>
+                        {/* Text Area */}
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)' }}>
+                                Or Paste Raw Text
+                            </label>
                             <textarea
-                                className="textarea-input"
                                 value={textInput}
                                 onChange={(e) => setTextInput(e.target.value)}
                                 placeholder="Paste NOTAM text here..."
-                                style={{ height: '200px', fontFamily: 'monospace' }}
+                                className="textarea-input"
+                                style={{ minHeight: '200px', fontFamily: 'monospace', fontSize: '0.85rem' }}
                             />
                         </div>
 
-                        <button
-                            className="btn btn-primary"
-                            style={{ width: '100%' }}
-                            onClick={handleParse}
-                            disabled={loading}
-                        >
-                            {loading ? 'Processing...' : 'Parse Geometry'}
-                        </button>
+                        {/* Action Bar */}
+                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                            <button
+                                onClick={handleParse}
+                                disabled={loading || !textInput.trim()}
+                                className="btn btn-primary"
+                                style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', opacity: (loading || !textInput.trim()) ? 0.5 : 1 }}
+                            >
+                                {loading ? <Cpu className="animate-spin" size={18} /> : <Map size={18} />}
+                                {loading ? status : 'Parse Geometry'}
+                            </button>
+                            <button
+                                onClick={onExport}
+                                disabled={notams.length === 0}
+                                className="btn"
+                                style={{ background: '#334155', color: 'white' }}
+                                title="Download Map Image"
+                            >
+                                Export
+                            </button>
+                        </div>
 
-                        {status && <div style={{ marginTop: '1rem', color: '#909296', fontSize: '0.9rem' }}>{status}</div>}
+                        {status && !loading && (
+                            <div style={{ padding: '0.75rem', borderRadius: '8px', background: 'rgba(6, 182, 212, 0.1)', border: '1px solid rgba(6, 182, 212, 0.2)', fontSize: '0.85rem', color: 'var(--accent-primary)' }}>
+                                {status}
+                            </div>
+                        )}
                     </div>
                 )}
 
                 {activeTab === 'list' && (
-                    <div className="list-panel">
-                        {notams.length === 0 && <div style={{ color: '#909296', textAlign: 'center', marginTop: '2rem' }}>No NOTAMs parsed yet.</div>}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        {notams.length === 0 && (
+                            <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-secondary)' }}>
+                                <ShieldAlert size={48} style={{ marginBottom: '1rem', opacity: 0.2 }} />
+                                <p>No active geometries.</p>
+                                <p style={{ fontSize: '0.85rem', opacity: 0.7 }}>Parse some text to see results here.</p>
+                            </div>
+                        )}
 
-                        {notams.map(notam => (
-                            <div key={notam.id} style={{ background: '#2c2e33', padding: '10px', borderRadius: '4px', marginBottom: '10px', borderLeft: `4px solid ${notam.color} ` }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '5px' }}>
-                                    <strong style={{ cursor: 'pointer' }} onClick={() => onSelect(notam.id)}>
-                                        {notam.ids.length > 0 ? notam.ids.join(', ') : 'Unknown ID'}
-                                    </strong>
-                                    <div style={{ display: 'flex', gap: '5px' }}>
-                                        <button onClick={() => toggleVisibility(notam.id)} style={{ background: 'none', border: 'none', color: '#909296', cursor: 'pointer' }}>
-                                            {notam.visible ? <Eye size={16} /> : <EyeOff size={16} />}
-                                        </button>
-                                        <button onClick={() => deleteNotam(notam.id)} style={{ background: 'none', border: 'none', color: '#909296', cursor: 'pointer' }}>
-                                            <Trash2 size={16} />
-                                        </button>
+                        {notams.map((notam) => (
+                            <div key={notam.id} style={{
+                                background: 'rgba(15, 23, 42, 0.6)',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: '10px',
+                                overflow: 'hidden',
+                                transition: 'transform 0.2s',
+                            }}>
+                                <div
+                                    onClick={() => onSelect(notam.id)}
+                                    style={{ padding: '1rem', cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+                                >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.5rem' }}>
+                                        <span style={{
+                                            fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase',
+                                            background: notam.geometry.type === 'multiline' ? 'rgba(6, 182, 212, 0.2)' : 'rgba(244, 63, 94, 0.2)',
+                                            color: notam.geometry.type === 'multiline' ? 'var(--accent-primary)' : 'var(--accent-secondary)',
+                                            padding: '2px 6px', borderRadius: '4px'
+                                        }}>
+                                            {notam.geometry.type === 'multiline' ? 'Route Segment' : notam.geometry.type}
+                                        </span>
+                                        <div style={{ display: 'flex', gap: '4px' }}>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); toggleVisibility(notam.id); }}
+                                                style={{ background: 'none', border: 'none', padding: '4px', color: 'var(--text-secondary)', cursor: 'pointer' }}
+                                            >
+                                                {notam.visible ? <Eye size={14} /> : <EyeOff size={14} />}
+                                            </button>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); deleteNotam(notam.id); }}
+                                                style={{ background: 'none', border: 'none', padding: '4px', color: '#ef4444', cursor: 'pointer' }}
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div style={{ fontSize: '0.9rem', fontWeight: 500, color: 'var(--text-primary)', marginBottom: '4px', fontFamily: 'monospace' }}>
+                                        {notam.ids && notam.ids.length > 0 ? notam.ids.join(', ') : 'UNKNOWN ID'}
+                                    </div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                        {notam.description || notam.raw_text}
                                     </div>
                                 </div>
-                                <div style={{ fontSize: '0.8rem', color: '#909296', marginBottom: '5px' }}>
-                                    {notam.geometry.type.toUpperCase()} | {notam.altitude.lower}-{notam.altitude.upper}
-                                </div>
-                                {notam.description && (
-                                    <div style={{ fontSize: '0.8rem', color: '#c1c2c5', marginBottom: '5px', fontWeight: 500 }}>
-                                        {notam.description}
+                                {notam.altitude && (
+                                    <div style={{
+                                        padding: '0.5rem 1rem', background: 'rgba(0,0,0,0.2)',
+                                        fontSize: '0.75rem', color: '#94a3b8', display: 'flex', justifyContent: 'space-between'
+                                    }}>
+                                        <span>FL {notam.altitude.lower} - {notam.altitude.upper}</span>
+                                        <span>{notam.geometry.type === 'multiline' ? 'High Priority' : 'Standard'}</span>
                                     </div>
                                 )}
-                                <div style={{ fontSize: '0.8rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                    {notam.raw_text.substring(0, 50)}...
-                                </div>
                             </div>
-    const [activeTab, setActiveTab] = useState<'input' | 'list'>('input');
-                        const [textInput, setTextInput] = useState('');
-                        const [loading, setLoading] = useState(false);
-                        const [status, setStatus] = useState('');
-                        const fileInputRef = useRef<HTMLInputElement>(null);
+                        ))}
+                    </div>
+                )}
+            </div>
 
-                            const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
-                                setLoading(true);
-                                setStatus('Running OCR...');
-                                try {
-                const {data: {text} } = await Tesseract.recognize(file, 'eng');
-                                setTextInput(text);
-                                setStatus('OCR Complete. Please verify text.');
-            } catch (err) {
-                                    setStatus('OCR Failed.');
-                                console.error(err);
-            } finally {
-                                    setLoading(false);
-            }
-        }
-    };
-
-    const handleParse = async () => {
-        if (!textInput.trim()) return;
-                                setLoading(true);
-                                setStatus('Parsing...');
-                                try {
-            const response = await axios.post(`${API_BASE_URL} /api/parse`, {text: textInput });
-                                const result = response.data;
-
-            const newNotams = result.results.map((item: any) => ({
-                                    id: crypto.randomUUID(),
-                                raw_text: item.raw_text,
-                                geometry: item.geometry,
-                                altitude: item.altitude,
-                                description: item.description,
-                                ids: item.ids,
-                                visible: true,
-                                color: '#fa5252'
-            }));
-
-                                setNotams(newNotams);
-                                setStatus(`Parsed ${newNotams.length} NOTAMs.`);
-                                setActiveTab('list');
-
-            // Auto-select the first new NOTAM to zoom the map
-            if (newNotams.length > 0) {
-                                    onSelect(newNotams[0].id);
-            }
-        } catch (err) {
-
-
-
-                                    console.error(err);
-                                const errMsg = axios.isAxiosError(err)
-                                ? `Connection Error: ${err.response?.status || 'Network Failed'} at ${API_BASE_URL}`
-                                : `Error: ${String(err)}`;
-
-                                setStatus(errMsg);
-
-                                const newUrl = prompt(`CONNECTION FAILED! \nDetails: ${errMsg}\n\nPlease verify your Railway URL and paste it below:`, API_BASE_URL);
-                                if (newUrl) {
-                                    localStorage.setItem('custom_backend_url', newUrl.replace(/\/$/, ''));
-                                window.location.reload();
-            }
-
-
-                                console.error(err);
-        } finally {
-                                    setLoading(false);
-        }
-    };
-
-    const toggleVisibility = (id: string) => {
-                                    setNotams(prev => prev.map(n => n.id === id ? { ...n, visible: !n.visible } : n));
-    };
-
-    const deleteNotam = (id: string) => {
-                                    setNotams(prev => prev.filter(n => n.id !== id));
-    };
-
-                                return (
-                                <div className="sidebar" style={{ position: 'relative', zIndex: 1001, width: '350px', height: '100vh', background: '#25262b', borderRight: '1px solid #373a40', display: 'flex', flexDirection: 'column' }}>
-                                    <div className="header" style={{ padding: '1rem', borderBottom: '1px solid #373a40' }}>
-                                        <h2 style={{ margin: 0, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            <Layers size={20} /> NOTAM Studio
-                                        </h2>
-                                    </div>
-
-                                    <div className="tabs" style={{ display: 'flex', borderBottom: '1px solid #373a40' }}>
-                                        <button
-                                            className={`tab ${activeTab === 'input' ? 'active' : ''} `}
-                                            onClick={() => setActiveTab('input')}
-                                            style={{ flex: 1, padding: '10px', background: activeTab === 'input' ? '#2c2e33' : 'transparent', border: 'none', color: 'inherit', cursor: 'pointer' }}
-                                        >
-                                            Input
-                                        </button>
-                                        <button
-                                            className={`tab ${activeTab === 'list' ? 'active' : ''} `}
-                                            onClick={() => setActiveTab('list')}
-                                            style={{ flex: 1, padding: '10px', background: activeTab === 'list' ? '#2c2e33' : 'transparent', border: 'none', color: 'inherit', cursor: 'pointer' }}
-                                        >
-                                            List ({notams.length})
-                                        </button>
-                                    </div>
-
-                                    <div className="content" style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
-                                        {activeTab === 'input' && (
-                                            <div className="input-panel">
-                                                <div className="input-group">
-                                                    <label className="input-label">Upload Image</label>
-                                                    <div
-                                                        onClick={() => fileInputRef.current?.click()}
-                                                        style={{ border: '2px dashed #373a40', padding: '2rem', textAlign: 'center', cursor: 'pointer', borderRadius: '4px', color: '#909296' }}
-                                                    >
-                                                        <Upload size={24} style={{ marginBottom: '0.5rem' }} />
-                                                        <div>Click to upload NOTAM/NAVAREA image</div>
-                                                    </div>
-                                                    <input
-                                                        type="file"
-                                                        ref={fileInputRef}
-                                                        onChange={handleFileUpload}
-                                                        style={{ display: 'none' }}
-                                                        accept="image/*"
-                                                    />
-                                                </div>
-
-                                                <div className="input-group">
-                                                    <label className="input-label">Or Paste Text</label>
-                                                    <textarea
-                                                        className="textarea-input"
-                                                        value={textInput}
-                                                        onChange={(e) => setTextInput(e.target.value)}
-                                                        placeholder="Paste NOTAM text here..."
-                                                        style={{ height: '200px', fontFamily: 'monospace' }}
-                                                    />
-                                                </div>
-
-                                                <button
-                                                    className="btn btn-primary"
-                                                    style={{ width: '100%' }}
-                                                    onClick={handleParse}
-                                                    disabled={loading}
-                                                >
-                                                    {loading ? 'Processing...' : 'Parse Geometry'}
-                                                </button>
-
-                                                {status && <div style={{ marginTop: '1rem', color: '#909296', fontSize: '0.9rem' }}>{status}</div>}
-                                            </div>
-                                        )}
-
-                                        {activeTab === 'list' && (
-                                            <div className="list-panel">
-                                                {notams.length === 0 && <div style={{ color: '#909296', textAlign: 'center', marginTop: '2rem' }}>No NOTAMs parsed yet.</div>}
-
-                                                {notams.map(notam => (
-                                                    <div key={notam.id} style={{ background: '#2c2e33', padding: '10px', borderRadius: '4px', marginBottom: '10px', borderLeft: `4px solid ${notam.color} ` }}>
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '5px' }}>
-                                                            <strong style={{ cursor: 'pointer' }} onClick={() => onSelect(notam.id)}>
-                                                                {notam.ids.length > 0 ? notam.ids.join(', ') : 'Unknown ID'}
-                                                            </strong>
-                                                            <div style={{ display: 'flex', gap: '5px' }}>
-                                                                <button onClick={() => toggleVisibility(notam.id)} style={{ background: 'none', border: 'none', color: '#909296', cursor: 'pointer' }}>
-                                                                    {notam.visible ? <Eye size={16} /> : <EyeOff size={16} />}
-                                                                </button>
-                                                                <button onClick={() => deleteNotam(notam.id)} style={{ background: 'none', border: 'none', color: '#909296', cursor: 'pointer' }}>
-                                                                    <Trash2 size={16} />
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                        <div style={{ fontSize: '0.8rem', color: '#909296', marginBottom: '5px' }}>
-                                                            {notam.geometry.type.toUpperCase()} | {notam.altitude.lower}-{notam.altitude.upper}
-                                                        </div>
-                                                        {notam.description && (
-                                                            <div style={{ fontSize: '0.8rem', color: '#c1c2c5', marginBottom: '5px', fontWeight: 500 }}>
-                                                                {notam.description}
-                                                            </div>
-                                                        )}
-                                                        <div style={{ fontSize: '0.8rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                            {notam.raw_text.substring(0, 50)}...
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="sidebar-footer" style={{ padding: '1rem', borderTop: '1px solid #373a40' }}>
-                                        <button className="btn" style={{ width: '100%', background: '#373a40', color: 'white', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }} onClick={onExport}>
-                                            <Download size={16} /> Export 4K Map
-                                        </button>
-                                        <button
-                                            onClick={exportKML}
-                                            style={{
-                                                width: '100%',
-                                                padding: '0.75rem',
-                                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                                color: 'white',
-                                                border: 'none',
-                                                borderRadius: '4px',
-                                                cursor: 'pointer',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '0.5rem',
-                                                fontSize: '1rem',
-                                                fontWeight: 600
-                                            }}
-                                        >
-                                            <Download size={16} /> Download KML
-                                        </button>
-                                    </div>
-                                </div>
-                                );
+            {/* Footer Area */}
+            <div style={{ padding: '1rem', borderTop: '1px solid var(--border-color)', fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
+                System Online • <span style={{ color: 'var(--success)' }}>Connected</span>
+            </div>
+        </div>
+    );
 };

@@ -51,7 +51,11 @@ export const MapComponent: React.FC<Props> = ({ notams, selectedId }) => {
     }, []);
 
     return (
-        <MapContainer center={[20, 0]} zoom={2} style={{ height: '100%', width: '100%', background: '#1a1b1e' }}>
+        <MapContainer center={[20, 0]} zoom={2} style={{ height: '100%', width: '100%', background: '#0f172a' }}>
+            <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            />
             <LayersControl position="topright">
                 {/* Primary Base Layers */}
                 <LayersControl.BaseLayer checked name="Dark Matter">
@@ -278,7 +282,7 @@ export const MapComponent: React.FC<Props> = ({ notams, selectedId }) => {
                             </Polyline>
                         )}
 
-                                                {type === 'multiline' && (
+                        {type === 'multiline' && (
                             <Polyline positions={latlngs as any} pathOptions={{ color, weight: 4 }}>
                                 <Popup>
                                     <div style={{ color: 'black' }}>
