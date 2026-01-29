@@ -4,7 +4,7 @@ import { Upload, Layers, Eye, EyeOff, Download, Trash2 } from 'lucide-react';
 import axios from 'axios';
 import type { Notam } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://grand-flow.up.railway.app';
+const API_BASE_URL = (typeof window !== 'undefined' ? localStorage.getItem('custom_backend_url') : null) || import.meta.env.VITE_API_URL || 'https://grand-flow.up.railway.app';
 
 interface Props {
     notams: Notam[];
@@ -95,7 +95,14 @@ ew Date().toISOString().replace(/[:.]/g, '-')}.kml`;
                 onSelect(newNotams[0].id);
             }
         } catch (err) {
+            
+            const newUrl = prompt("Backend connection failed! Please paste your Railway URL (e.g., https://grand-flow.up.railway.app):", "https://grand-flow.up.railway.app");
+            if (newUrl) {
+                localStorage.setItem('custom_backend_url', newUrl.replace(/\/$/, ''));
+                window.location.reload();
+            }
             setStatus('Parsing failed. Is backend running?');
+
             console.error(err);
         } finally {
             setLoading(false);
@@ -263,7 +270,14 @@ ew Date().toISOString().replace(/[:.]/g, '-')}.kml`;
                 onSelect(newNotams[0].id);
             }
         } catch (err) {
+            
+            const newUrl = prompt("Backend connection failed! Please paste your Railway URL (e.g., https://grand-flow.up.railway.app):", "https://grand-flow.up.railway.app");
+            if (newUrl) {
+                localStorage.setItem('custom_backend_url', newUrl.replace(/\/$/, ''));
+                window.location.reload();
+            }
             setStatus('Parsing failed. Is backend running?');
+
             console.error(err);
         } finally {
             setLoading(false);
