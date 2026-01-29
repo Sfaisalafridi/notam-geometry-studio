@@ -141,7 +141,7 @@ export const Sidebar: React.FC<Props> = ({ notams, setNotams, onSelect, onExport
         <div className="sidebar" style={{ position: 'relative', zIndex: 1001, width: '350px', height: '100vh', background: '#25262b', borderRight: '1px solid #373a40', display: 'flex', flexDirection: 'column' }}>
             <div className="header" style={{ padding: '1rem', borderBottom: '1px solid #373a40', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h2 style={{ margin: 0, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Layers size={20} /> NOTAM Studio
+                    <Layers size={20} /> NOTAM Studio <span style={{ fontSize: '0.8rem', opacity: 0.5 }}>v1.2</span>
                 </h2>
                 <button onClick={() => setShowSettings(!showSettings)} style={{ background: 'none', border: 'none', color: '#909296', cursor: 'pointer' }} title="Configure Server">
                     <Settings size={20} />
