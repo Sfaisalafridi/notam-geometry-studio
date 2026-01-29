@@ -7,7 +7,8 @@ import { parseLocal } from '../localParser';
 
 // The URL is now strictly managed by the ConnectionWizard/App.tsx flow
 // But we still need a fallback for type safety, though it should be guaranteed by App
-const API_BASE_URL = 'https://grand-flow.up.railway.app';
+// Flexible Backend URL Logic
+const getBaseUrl = () => localStorage.getItem('notam_backend_url') || 'https://grand-flow.up.railway.app';
 
 interface Props {
     notams: Notam[];
@@ -21,6 +22,8 @@ export const Sidebar: React.FC<Props> = ({ notams, setNotams, onSelect, onExport
     const [textInput, setTextInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState('');
+    const [configOpen, setConfigOpen] = useState(false);
+    const [tempUrl, setTempUrl] = useState(getBaseUrl());
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -47,7 +50,7 @@ export const Sidebar: React.FC<Props> = ({ notams, setNotams, onSelect, onExport
         setStatus('Analyzing Flight Data...');
         try {
             // Remove trailing slash if present for safety
-            const safeBase = API_BASE_URL.replace(/\/$/, '');
+            const safeBase = getBaseUrl().replace(/\/$/, '');
             const response = await axios.post(`${safeBase}/api/parse`, { text: textInput });
             const result = response.data;
 
@@ -88,7 +91,11 @@ export const Sidebar: React.FC<Props> = ({ notams, setNotams, onSelect, onExport
 
                 setNotams(prev => [...newNotams, ...prev]);
                 setStatus('Simulated Local Parse (Backend Offline)');
-                alert('Backend Error - Switched to OFFLINE MODE.\n\nParsing performed locally. Some features may be limited.');
+                // Only alert if we haven't warned recently? Nah, consistent is better.
+                if (!localStorage.getItem('offline_warned')) {
+                    alert('Backend Error - Switched to OFFLINE MODE.\n\nParsing performed locally. Some features may be limited.');
+                    localStorage.setItem('offline_warned', 'true');
+                }
 
                 if (newNotams.length > 0) setActiveTab('list');
 
@@ -109,6 +116,12 @@ export const Sidebar: React.FC<Props> = ({ notams, setNotams, onSelect, onExport
         setNotams(prev => prev.filter(n => n.id !== id));
     };
 
+    const saveConfig = () => {
+        localStorage.setItem('notam_backend_url', tempUrl);
+        setConfigOpen(false);
+        alert('Backend URL Updated. Connection will be tested on next parse.');
+    };
+
     return (
         <div className="sidebar" style={{
             width: '380px', height: '100vh',
@@ -119,11 +132,30 @@ export const Sidebar: React.FC<Props> = ({ notams, setNotams, onSelect, onExport
             boxShadow: '4px 0 20px rgba(0,0,0,0.4)',
             zIndex: 1000
         }}>
+            {/* Config Modal */}
+            {configOpen && (
+                <div style={{ padding: '10px', background: '#334155', color: 'white' }}>
+                    <label style={{ display: 'block', fontSize: '0.7rem', marginBottom: '4px' }}>CUSTOM BACKEND URL (Render/Heroku/etc)</label>
+                    <input
+                        value={tempUrl}
+                        onChange={e => setTempUrl(e.target.value)}
+                        style={{ width: '100%', padding: '4px', color: 'black' }}
+                    />
+                    <div style={{ marginTop: '4px', display: 'flex', gap: '5px' }}>
+                        <button onClick={saveConfig} style={{ background: 'var(--success)', border: 'none', padding: '4px 8px', cursor: 'pointer' }}>Save</button>
+                        <button onClick={() => setConfigOpen(false)} style={{ background: '#ef4444', border: 'none', padding: '4px 8px', cursor: 'pointer' }}>Cancel</button>
+                    </div>
+                </div>
+            )}
+
             {/* Header */}
             <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border-color)', background: 'rgba(15, 23, 42, 0.6)' }}>
-                <h2 style={{ margin: 0, fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
+                <h2
+                    onDoubleClick={() => setConfigOpen(true)}
+                    title="Double Click to Configure Backend"
+                    style={{ margin: 0, fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--text-primary)', cursor: 'help' }}>
                     <Layers size={22} className="text-cyan-400" style={{ color: 'var(--accent-primary)' }} />
-                    NOTAM Studio <span style={{ fontSize: '0.7rem', background: 'var(--success)', color: '#000', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>v2.3 RESCUE</span>
+                    NOTAM Studio <span style={{ fontSize: '0.7rem', background: 'var(--success)', color: '#000', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>v2.4 UNIVERSAL</span>
                 </h2>
                 <div style={{ display: 'flex', gap: '8px', marginTop: '0.75rem' }}>
                     <button
@@ -158,7 +190,7 @@ export const Sidebar: React.FC<Props> = ({ notams, setNotams, onSelect, onExport
                         onClick={async () => {
                             setStatus('Testing Connection...');
                             try {
-                                await axios.get(API_BASE_URL);
+                                await axios.get(getBaseUrl());
                                 setStatus('Online! Backend is reachable.');
                                 alert('Success: Backend is Online!');
                             } catch (e: any) {
