@@ -1,7 +1,7 @@
 import re
 from typing import List, Dict, Any, Optional
-from fir_data import get_fir_boundary
-from waypoint_db import get_waypoint_coords
+from .fir_data import get_fir_boundary
+from .waypoint_db import get_waypoint_coords
 
 class NotamParser:
     def __init__(self):
