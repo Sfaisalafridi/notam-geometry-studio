@@ -71,23 +71,31 @@ export const Sidebar: React.FC<Props> = ({ notams, setNotams, onSelect, onExport
                 onSelect(newNotams[0].id);
             }
         } catch (err: any) {
-            console.error('Parsing Error:', err);
-            let msg = 'Unknown Error';
+            console.error('Backend failed, trying local:', err);
+            try {
+                // FALLBACK TO LOCAL PARSER
+                const result = parseLocal(textInput);
+                const newNotams = result.results.map((item: any) => ({
+                    id: crypto.randomUUID(),
+                    raw_text: item.raw_text,
+                    geometry: item.geometry,
+                    altitude: item.altitude,
+                    description: item.description,
+                    ids: item.ids,
+                    visible: true,
+                    color: item.geometry.type === 'multiline' ? '#06b6d4' : '#f43f5e'
+                }));
 
-            if (axios.isAxiosError(err)) {
-                if (!err.response) {
-                    msg = 'Network Error - Cannot reach backend';
-                } else {
-                    const status = err.response.status;
-                    const detail = err.response.data?.detail || err.message;
-                    msg = `Server Error [${status}]: ${detail}`;
-                }
-            } else {
-                msg = `Client Error: ${err.message}`;
+                setNotams(prev => [...newNotams, ...prev]);
+                setStatus('Simulated Local Parse (Backend Offline)');
+                alert('Backend Error - Switched to OFFLINE MODE.\n\nParsing performed locally. Some features may be limited.');
+
+                if (newNotams.length > 0) setActiveTab('list');
+
+            } catch (localErr) {
+                setStatus('Parsing Failed Completely');
+                alert('Critical: Even fallback parsing failed.');
             }
-
-            setStatus(msg);
-            alert(`Parsing Failed!\n\n${msg}\n\nTroubleshooting:\n1. Check internet connection.\n2. Backend may be waking up (wait 30s).\n3. Check console for details.`);
         } finally {
             setLoading(false);
         }
@@ -219,8 +227,8 @@ export const Sidebar: React.FC<Props> = ({ notams, setNotams, onSelect, onExport
                             </button>
                         </div>
 
-                        {status && !loading && (
-                            <div style={{ padding: '0.75rem', borderRadius: '8px', background: 'rgba(6, 182, 212, 0.1)', border: '1px solid rgba(6, 182, 212, 0.2)', fontSize: '0.85rem', color: 'var(--accent-primary)' }}>
+                        {activeTab === 'input' && status && !loading && (
+                            <div style={{ padding: '0.75rem', borderRadius: '8px', background: 'rgba(6, 182, 212, 0.1)', border: '1px solid rgba(6, 182, 212, 0.2)', fontSize: '0.85rem', color: 'var(--accent-primary)', marginTop: '1rem' }}>
                                 {status}
                             </div>
                         )}
