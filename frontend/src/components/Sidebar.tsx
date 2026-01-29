@@ -108,10 +108,6 @@ export const Sidebar: React.FC<Props> = ({ notams, setNotams, onSelect, onExport
         } catch (err) {
             
             
-            if (newUrl) {
-                localStorage.setItem('custom_backend_url', newUrl.replace(/\/$/, ''));
-                window.location.reload();
-            }
             
             console.error(err);
             const errMsg = axios.isAxiosError(err) 
@@ -316,10 +312,6 @@ export const Sidebar: React.FC<Props> = ({ notams, setNotams, onSelect, onExport
         } catch (err) {
             
             
-            if (newUrl) {
-                localStorage.setItem('custom_backend_url', newUrl.replace(/\/$/, ''));
-                window.location.reload();
-            }
             
             console.error(err);
             const errMsg = axios.isAxiosError(err) 
