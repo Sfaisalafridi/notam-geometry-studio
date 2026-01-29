@@ -123,7 +123,7 @@ export const Sidebar: React.FC<Props> = ({ notams, setNotams, onSelect, onExport
             <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border-color)', background: 'rgba(15, 23, 42, 0.6)' }}>
                 <h2 style={{ margin: 0, fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
                     <Layers size={22} className="text-cyan-400" style={{ color: 'var(--accent-primary)' }} />
-                    NOTAM Studio <span style={{ fontSize: '0.7rem', background: 'var(--accent-primary)', color: '#000', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>2.0</span>
+                    NOTAM Studio <span style={{ fontSize: '0.7rem', background: 'var(--success)', color: '#000', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>v2.1 OFFLINE READY</span>
                 </h2>
                 <div style={{ display: 'flex', gap: '8px', marginTop: '0.75rem' }}>
                     <button
