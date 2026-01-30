@@ -165,9 +165,24 @@ const DrawControl: React.FC<{ notams: Notam[], setNotams: React.Dispatch<React.S
         drawnItems.clearLayers();
 
         notams.forEach(notam => {
-            if (!notam.visible) return;
+            if (!notam.visible || !notam.geometry || !notam.geometry.coordinates) return;
+
             const { type, coordinates, radius_nm } = notam.geometry;
-            const latlngs = coordinates.map(c => [c[0], c[1]] as [number, number]);
+
+            // STRICT VALIDATION: Filter out any non-finite or malformed coordinates to prevent "reading 'lng' of undefined" crash
+            const validCoords = coordinates.filter(c =>
+                Array.isArray(c) &&
+                c.length >= 2 &&
+                Number.isFinite(c[0]) &&
+                Number.isFinite(c[1])
+            );
+
+            if (validCoords.length === 0) return; // Skip if no valid geometry
+
+            // For polygons/routes, we need enough points.
+            if ((type === 'polygon' || type === 'route') && validCoords.length < 2) return;
+
+            const latlngs = validCoords.map(c => [c[0], c[1]] as [number, number]);
 
             let layer: L.Layer | null = null;
             const opts = {
@@ -177,12 +192,26 @@ const DrawControl: React.FC<{ notams: Notam[], setNotams: React.Dispatch<React.S
                 notamId: notam.id // Attach ID for reverse lookup
             };
 
-            if (type === 'polygon') {
-                layer = L.polygon(latlngs, opts);
-            } else if (type === 'circle' && radius_nm) {
-                layer = L.circle(latlngs[0], { ...opts, radius: radius_nm * 1852 });
-            } else if (type === 'route' || type === 'line' || type === 'multiline') {
-                layer = L.polyline(latlngs, opts);
+            try {
+                if (type === 'polygon') {
+                    layer = L.polygon(latlngs, opts);
+                } else if (type === 'circle' && radius_nm) {
+                    // Start radius requires a single point
+                    layer = L.circle(latlngs[0], { ...opts, radius: radius_nm * 1852 });
+                } else if (type === 'route' || type === 'line' || type === 'multiline') {
+                    layer = L.polyline(latlngs, opts);
+                } else {
+                    // Fallback point/marker
+                    // Optionally added, but loop logic mainly handles shapes
+                    // If point, usually circle with small radius or just marker. 
+                    // Existing logic seemed to infer circle for points with radius, or simple polygon default.
+                    // To be safe, if unknown type but valid coords, do nothing or default.
+                    if (type === 'point') {
+                        layer = L.circle(latlngs[0], { ...opts, radius: (radius_nm || 5) * 1852 });
+                    }
+                }
+            } catch (err) {
+                console.warn("Leaflet Layer Creation Failed:", err);
             }
 
             if (layer) {
