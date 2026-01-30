@@ -40,44 +40,34 @@ export const Sidebar: React.FC<Props> = ({ notams, setNotams, onSelect, onExport
 
     const handleParseNotam = async () => {
         if (!textInput.trim()) return;
-        setLoading(true); setStatus('Analyzing Intel...');
+        setLoading(true);
+        setStatus('Analyzing Intel...'); // Show immediate feedback
 
         try {
-            // Priority 1: Cloud API (Better parsing)
-            const apiUrl = import.meta.env.VITE_API_URL;
-            if (apiUrl && !apiUrl.includes('your-backend')) {
-                try {
-                    const response = await axios.post(`${apiUrl}/api/parse`, { text: textInput });
-                    if (response.data && response.data.results) {
-                        const newNotams = response.data.results.map((item: any) => ({
-                            id: crypto.randomUUID(),
-                            raw_text: item.raw_text, geometry: item.geometry, altitude: item.altitude,
-                            description: item.description, ids: item.ids, visible: true, color: '#ef4444'
-                        }));
-                        setNotams(prev => [...newNotams, ...prev]);
-                        setStatus(`Cloud Analysis: ${newNotams.length} areas.`);
-                        setActiveTab('layers');
-                        setLoading(false);
-                        return;
-                    }
-                } catch (apiError) {
-                    console.warn('Cloud API unavailable, switching to offline mode.', apiError);
-                    setStatus('Cloud Error - Switched to OFFLINE MODE');
-                }
-            }
+            // Priority: Local Processing Engine (Faster & Secure)
+            // Adding a small delay for better UX so the loading state is visible
+            await new Promise(resolve => setTimeout(resolve, 600));
 
-            // Priority 2: Local Fallback
             const result = parseLocal(textInput, globalAirports);
+            console.log('Local parse result:', result);
+
             const newNotams = result.results.map((item: any) => ({
                 id: crypto.randomUUID(),
                 raw_text: item.raw_text, geometry: item.geometry, altitude: item.altitude,
                 description: item.description, ids: item.ids, visible: true, color: '#ef4444'
             }));
+
             setNotams(prev => [...newNotams, ...prev]);
-            setStatus(apiUrl ? 'Backend Error - Switched to OFFLINE MODE' : `Offline Analysis: ${newNotams.length} areas.`);
+
+            // Positive status message indicating successful analysis
+            setStatus(`Analysis Complete: ${newNotams.length} areas processed.`);
             setActiveTab('layers');
-        } catch (e) { setStatus('Parsing Failed'); }
-        setLoading(false);
+        } catch (e) {
+            console.error('Parsing error:', e);
+            setStatus('Analysis Failed');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const removeNotam = (e: React.MouseEvent, id: string) => {
