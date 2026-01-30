@@ -1,0 +1,285 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "properties": {
+                "GEONAME": "Venezuelan EEZ",
+                "POL_TYPE": "200NM",
+                "SOVEREIGN": "Venezuela"
+            },
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [
+                            -73.0,
+                            12.5
+                        ],
+                        [
+                            -60.0,
+                            12.5
+                        ],
+                        [
+                            -60.0,
+                            8.0
+                        ],
+                        [
+                            -73.0,
+                            8.0
+                        ],
+                        [
+                            -73.0,
+                            12.5
+                        ]
+                    ]
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "GEONAME": "Curacao EEZ",
+                "POL_TYPE": "200NM",
+                "SOVEREIGN": "Netherlands"
+            },
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [
+                            -70.0,
+                            13.0
+                        ],
+                        [
+                            -68.0,
+                            13.0
+                        ],
+                        [
+                            -68.0,
+                            11.5
+                        ],
+                        [
+                            -70.0,
+                            11.5
+                        ],
+                        [
+                            -70.0,
+                            13.0
+                        ]
+                    ]
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "GEONAME": "Aruba EEZ",
+                "POL_TYPE": "200NM",
+                "SOVEREIGN": "Netherlands"
+            },
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [
+                            -71.0,
+                            13.0
+                        ],
+                        [
+                            -70.0,
+                            13.0
+                        ],
+                        [
+                            -70.0,
+                            12.0
+                        ],
+                        [
+                            -71.0,
+                            12.0
+                        ],
+                        [
+                            -71.0,
+                            13.0
+                        ]
+                    ]
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "GEONAME": "United States EEZ (Gulf of Mexico)",
+                "POL_TYPE": "200NM",
+                "SOVEREIGN": "USA"
+            },
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [
+                            -98.0,
+                            30.0
+                        ],
+                        [
+                            -80.0,
+                            30.0
+                        ],
+                        [
+                            -80.0,
+                            24.0
+                        ],
+                        [
+                            -98.0,
+                            24.0
+                        ],
+                        [
+                            -98.0,
+                            30.0
+                        ]
+                    ]
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "GEONAME": "Pakistan EEZ",
+                "POL_TYPE": "200NM",
+                "SOVEREIGN": "Pakistan"
+            },
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [
+                            61.0,
+                            26.0
+                        ],
+                        [
+                            68.0,
+                            26.0
+                        ],
+                        [
+                            68.0,
+                            23.0
+                        ],
+                        [
+                            61.0,
+                            23.0
+                        ],
+                        [
+                            61.0,
+                            26.0
+                        ]
+                    ]
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "GEONAME": "India EEZ (Arabian Sea)",
+                "POL_TYPE": "200NM",
+                "SOVEREIGN": "India"
+            },
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [
+                            68.0,
+                            24.0
+                        ],
+                        [
+                            75.0,
+                            24.0
+                        ],
+                        [
+                            75.0,
+                            8.0
+                        ],
+                        [
+                            68.0,
+                            8.0
+                        ],
+                        [
+                            68.0,
+                            24.0
+                        ]
+                    ]
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "GEONAME": "UAE EEZ",
+                "POL_TYPE": "200NM",
+                "SOVEREIGN": "UAE"
+            },
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [
+                            51.0,
+                            26.0
+                        ],
+                        [
+                            57.0,
+                            26.0
+                        ],
+                        [
+                            57.0,
+                            22.5
+                        ],
+                        [
+                            51.0,
+                            22.5
+                        ],
+                        [
+                            51.0,
+                            26.0
+                        ]
+                    ]
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "GEONAME": "Oman EEZ",
+                "POL_TYPE": "200NM",
+                "SOVEREIGN": "Oman"
+            },
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [
+                            56.0,
+                            26.0
+                        ],
+                        [
+                            60.0,
+                            26.0
+                        ],
+                        [
+                            60.0,
+                            16.0
+                        ],
+                        [
+                            56.0,
+                            16.0
+                        ],
+                        [
+                            56.0,
+                            26.0
+                        ]
+                    ]
+                ]
+            }
+        }
+    ]
+}

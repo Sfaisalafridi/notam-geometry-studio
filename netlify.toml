@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build"
+  command = "echo 'Skipping build, serving pre-built assets'"
   publish = "dist"
   functions = "netlify/functions"
 
