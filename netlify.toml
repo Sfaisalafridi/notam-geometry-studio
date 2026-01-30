@@ -1,6 +1,15 @@
 [build]
-  command = "npm run build"
+  command = "npm run build && pip install -r backend/requirements.txt"
   publish = "dist"
+  functions = "netlify/functions"
+
+[build.environment]
+  PYTHON_VERSION = "3.11"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
 
 [[redirects]]
   from = "/*"
