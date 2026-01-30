@@ -44,24 +44,51 @@ export const Sidebar: React.FC<Props> = ({ notams, setNotams, onSelect, onExport
         setStatus('Analyzing Intel...'); // Show immediate feedback
 
         try {
-            // Priority: Local Processing Engine (Faster & Secure)
-            // Adding a small delay for better UX so the loading state is visible
-            await new Promise(resolve => setTimeout(resolve, 600));
+            // Priority 1: Cloud API (Netlify Functions)
+            // We use a relative path '/api/parse' which Netlify redirects to the function
+            const apiUrl = import.meta.env.VITE_API_URL || '';
+            // If VITE_API_URL is set (e.g. to https://notamstudio.net), we use it, otherwise relative.
+            // For production on same domain, relative path '/api/parse' works best.
 
-            const result = parseLocal(textInput, globalAirports);
-            console.log('Local parse result:', result);
+            let cloudSuccess = false;
 
-            const newNotams = result.results.map((item: any) => ({
-                id: crypto.randomUUID(),
-                raw_text: item.raw_text, geometry: item.geometry, altitude: item.altitude,
-                description: item.description, ids: item.ids, visible: true, color: '#ef4444'
-            }));
+            try {
+                // Try cloud parsing first
+                const endpoint = apiUrl ? `${apiUrl}/api/parse` : '/api/parse';
+                const response = await axios.post(endpoint, { text: textInput });
 
-            setNotams(prev => [...newNotams, ...prev]);
+                if (response.data && response.data.results) {
+                    const newNotams = response.data.results.map((item: any) => ({
+                        id: crypto.randomUUID(),
+                        raw_text: item.raw_text, geometry: item.geometry, altitude: item.altitude,
+                        description: item.description, ids: item.ids, visible: true, color: '#ef4444'
+                    }));
+                    setNotams(prev => [...newNotams, ...prev]);
+                    setStatus(`Analysis Complete: ${newNotams.length} areas processed (Cloud).`);
+                    setActiveTab('layers');
+                    cloudSuccess = true;
+                }
+            } catch (apiError) {
+                console.warn('Cloud API unavailable, switching to local engine.', apiError);
+                // Fallthrough to local
+            }
 
-            // Positive status message indicating successful analysis
-            setStatus(`Analysis Complete: ${newNotams.length} areas processed.`);
-            setActiveTab('layers');
+            if (!cloudSuccess) {
+                // Priority 2: Local Processing Engine (Fallback)
+                console.log('Using local parser engine...');
+                const result = parseLocal(textInput, globalAirports);
+
+                const newNotams = result.results.map((item: any) => ({
+                    id: crypto.randomUUID(),
+                    raw_text: item.raw_text, geometry: item.geometry, altitude: item.altitude,
+                    description: item.description, ids: item.ids, visible: true, color: '#ef4444'
+                }));
+
+                setNotams(prev => [...newNotams, ...prev]);
+                setStatus(`Analysis Complete: ${newNotams.length} areas processed (Local).`);
+                setActiveTab('layers');
+            }
+
         } catch (e) {
             console.error('Parsing error:', e);
             setStatus('Analysis Failed');

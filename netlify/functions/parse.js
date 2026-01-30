@@ -1,10 +1,13 @@
-exports.handler = async function (event, context) {
+export const handler = async (event, context) => {
     // Only handle POST requests
     if (event.httpMethod !== 'POST') {
         return {
             statusCode: 200,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: 'ok', service: 'NOTAM Parser API - Netlify Functions' })
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            body: JSON.stringify({ status: 'ok', service: 'NOTAM Parser API - Netlify Functions (ESM)' })
         };
     }
 
@@ -14,7 +17,10 @@ exports.handler = async function (event, context) {
         if (!text) {
             return {
                 statusCode: 400,
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
                 body: JSON.stringify({ error: 'No text provided' })
             };
         }
@@ -33,7 +39,10 @@ exports.handler = async function (event, context) {
     } catch (error) {
         return {
             statusCode: 500,
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
             body: JSON.stringify({ error: error.message })
         };
     }
@@ -91,7 +100,7 @@ function parseNotam(text) {
             coordinates: coords,
             radius_nm: radius
         },
-        description: "Cloud Parse (Netlify Function)",
+        description: "Cloud Parse (Netlify Node.js)",
         ids: [`NOTAM-${Math.floor(Math.random() * 1000)}`],
         altitude: {
             lower: "SFC",
