@@ -1,15 +1,16 @@
-export const parseLocal = (text: string): any => {
-    // Basic Client-Side Parser Fallback
+import { getWaypointCoords } from './waypoint_db';
+
+export const parseLocal = (text: string, externalDB: Record<string, any> = {}): any => {
+    // Enhanced Client-Side Parser (Offline but Powerful)
     const coords: number[][] = [];
-    const regex = /(\d{2,3})[0-5]?\d?[NS]\s?(\d{2,3})[0-5]?\d?[EW]/gi;
-    let m;
 
     // Very naive cleanup
     let clean = text.toUpperCase();
 
-    // Try to find coordinates
+    // 1. Try to find coordinates (DMS/Decimal)
     // Matches 2500N 05500E format roughly
     const dmsRegex = /([0-9]{4,6})([NS])\s?([0-9]{5,7})([EW])/g;
+    let m;
 
     while ((m = dmsRegex.exec(clean)) !== null) {
         try {
@@ -32,6 +33,66 @@ export const parseLocal = (text: string): any => {
         } catch (e) { }
     }
 
+    // 2. Try to find Waypoints & Global Airports
+    // Provide a simple regex for 5-letter codes or 3-letter VORs
+    // Also matches 4-letter ICAO codes (e.g., KLAX, EGLL)
+    const waypointRegex = /\b([A-Z]{3,5})\b/g;
+    let wm;
+    while ((wm = waypointRegex.exec(clean)) !== null) {
+        const ident = wm[1];
+        // Filter out obvious keywords
+        const IGNORE = ['NOTAM', 'FROM', 'EST', 'FIR', 'SFC', 'UNL', 'GND', 'FL', 'WI', 'AREA', 'CIRCLE', 'RADIUS', 'NM', 'KM', 'AND', 'THE', 'TO', 'BTN', 'RTE', 'ROUTE'];
+        if (!IGNORE.includes(ident)) {
+            // Priority 1: Hardcoded/Verified Custom DB (waypoint_db.ts)
+            const wp = getWaypointCoords(ident);
+            if (wp) {
+                coords.push(wp);
+            }
+            // Priority 2: Global JSON DB
+            else if (externalDB && externalDB[ident]) {
+                const airport = externalDB[ident];
+                if (airport.lat && airport.lon) {
+                    coords.push([parseFloat(airport.lat), parseFloat(airport.lon)]);
+                }
+            }
+        }
+    }
+
+
+    // 3. Explicit ROUTE Command Detection
+    // e.g., "ROUTE OPLA OPKC"
+    if (clean.includes('ROUTE') || clean.includes('RTE') || clean.includes('FLIGHT TO')) {
+        const routeCoords: number[][] = [];
+        const words = clean.split(/[\s\/\-]+/);
+
+        words.forEach(w => {
+            // Check Local DB
+            let pt = getWaypointCoords(w);
+
+            // Check Global DB if not found
+            if (!pt && externalDB && externalDB[w]) {
+                const ap = externalDB[w];
+                pt = [parseFloat(ap.lat), parseFloat(ap.lon)];
+            }
+
+            if (pt) routeCoords.push(pt);
+        });
+
+        if (routeCoords.length >= 2) {
+            coords.length = 0; // Clear other noise
+            coords.push(...routeCoords);
+            return {
+                results: [{
+                    raw_text: text,
+                    geometry: { type: 'route', coordinates: coords, radius_nm: 0 },
+                    description: "Flight Route (Global)",
+                    ids: ["FLIGHT-" + Math.floor(Math.random() * 1000)],
+                    altitude: { lower: "GND", upper: "FL400" }
+                }]
+            };
+        }
+    }
+
     let type = 'point';
     let radius = 5; // default
 
@@ -41,14 +102,15 @@ export const parseLocal = (text: string): any => {
         if (radMatch) radius = parseInt(radMatch[1]);
         type = 'circle';
     }
-    if (clean.includes('ROUTE') || clean.includes('RTE') || clean.includes('CLSD')) type = 'multiline';
+    // Only set to multiline if not already a route
+    if (type !== 'route' && (clean.includes('ROUTE') || clean.includes('RTE') || clean.includes('CLSD'))) type = 'multiline';
 
     return {
         results: [{
             raw_text: text,
             geometry: { type, coordinates: coords, radius_nm: radius },
-            description: "Local Fallback Parse (Backend Offline)",
-            ids: ["LOCAL-001"],
+            description: "Local Parse (Enhanced)",
+            ids: ["LOCAL-" + Math.floor(Math.random() * 1000)],
             altitude: { lower: "SFC", upper: "UNL" }
         }]
     };

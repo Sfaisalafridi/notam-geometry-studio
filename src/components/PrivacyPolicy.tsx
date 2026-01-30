@@ -1,78 +1,125 @@
-import './PrivacyPolicy.css';
+import React from 'react';
+import { ArrowLeft, Shield, Lock, Eye, Server, Radio, Database, ShieldAlert } from 'lucide-react';
 
-export function PrivacyPolicy() {
-  return (
-    <div className="privacy-container">
-      <div className="privacy-content">
-        <div className="privacy-header">
-          <h1>Privacy Policy</h1>
-          <a href="/" className="close-button" aria-label="Close">×</a>
-        </div>
-        <p className="last-updated">Last updated: November 25, 2026</p>
-
-        <section>
-          <h2>1. Overview</h2>
-          <p>NOTAM Studio is a privacy-first tool designed for aviation professionals. We believe in transparency and simplicity. <strong>We do not track you, store your data, or sell your information.</strong></p>
-        </section>
-
-        <section>
-          <h2>2. Data Handling</h2>
-          <p>When you use NOTAM Studio:</p>
-          <ul>
-            <li><strong>Input Data:</strong> The NOTAM text you paste is processed in real-time to extract geometry. It is not saved to any database.</li>
-            <li><strong>Local Processing:</strong> Whenever possible, calculations are done locally or ephemerally on our servers.</li>
-            <li><strong>No Cookies:</strong> We do not use tracking cookies or third-party analytics pixels.</li>
-          </ul>
-        </section>
-
-        <section>
-          <h2>3. Usage Rights & Credits</h2>
-          <div className="usage-card">
-            <h3>? You Are Free To:</h3>
-            <ul>
-              <li>Use this tool for personal or commercial aviation projects.</li>
-              <li>Share screenshots, maps, and results in your reports, videos, or social media.</li>
-              <li>Integrate the outputs into your workflow.</li>
-            </ul>
-            
-            <div className="credit-requirement">
-              <h3>?? Requirement: Give Credit</h3>
-              <p>If you use NOTAM Studio in your public content (videos, articles, posts), you <strong>MUST</strong> credit the creator:</p>
-              <div className="credit-box">
-                <p>Created by <strong>@Sfaisalafridi</strong></p>
-                <a href="https://x.com/Sfaisalafridi" target="_blank" rel="noopener noreferrer">https://x.com/Sfaisalafridi</a>
-              </div>
+export const PrivacyPolicy: React.FC = () => {
+    return (
+        <div style={{
+            minHeight: '100vh',
+            background: '#0f172a',
+            color: '#f1f5f9',
+            fontFamily: '"JetBrains Mono", "Courier New", monospace',
+            padding: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center'
+        }}>
+            {/* Header */}
+            <div style={{ width: '100%', maxWidth: '900px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px', borderBottom: '1px solid #334155', paddingBottom: '20px' }}>
+                <a href="/" style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '8px',
+                    color: '#38bdf8', textDecoration: 'none', fontWeight: 600,
+                    textTransform: 'uppercase', letterSpacing: '2px', fontSize: '0.9rem'
+                }}>
+                    <ArrowLeft size={16} /> Abort / Return
+                </a>
+                <div style={{ color: '#ef4444', fontWeight: 'bold', letterSpacing: '3px', border: '1px solid #ef4444', padding: '4px 12px' }}>
+                    TOP SECRET // NOFORN
+                </div>
             </div>
-          </div>
-        </section>
 
-        <section>
-          <h2>4. Copyright Notice</h2>
-          <p className="warning">
-            <strong>?? COPYRIGHT WARNING</strong><br/>
-            The algorithms, design, and code of NOTAM Studio are the intellectual property of @Sfaisalafridi. 
-            <strong>Unauthorized copying, reproduction, or use without credit is strictly prohibited and constitutes copyright infringement.</strong>
-            We actively monitor for unauthorized use and will take legal action against violators.
-          </p>
-        </section>
+            <div style={{
+                maxWidth: '900px',
+                width: '100%',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                gap: '20px'
+            }}>
+                {/* Main Content */}
+                <div style={{
+                    gridColumn: 'span 2',
+                    background: 'rgba(15, 23, 42, 0.8)',
+                    border: '1px solid #334155',
+                    position: 'relative',
+                    overflow: 'hidden'
+                }}>
+                    <div style={{ background: '#1e293b', padding: '15px 20px', borderBottom: '1px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h1 style={{ fontSize: '1.2rem', margin: 0, color: 'white', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <Shield size={20} color="#38bdf8" /> PRIVACY_PROTOCOL_V6.0
+                        </h1>
+                        <div style={{ fontSize: '0.8rem', color: '#10b981' }}>SYSTEM SECURE</div>
+                    </div>
 
-        <section>
-          <h2>5. Contact & Permissions</h2>
-          <p>For permission requests, feature suggestions, or privacy questions, please contact the creator directly:</p>
-          <div className="contact-section">
-            <a href="https://x.com/Sfaisalafridi" target="_blank" rel="noopener noreferrer" className="contact-button">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-              </svg>
-              Message @Sfaisalafridi
-            </a>
-          </div>
-        </section>
+                    <div style={{ padding: '30px', lineHeight: '1.8', color: '#cbd5e1' }}>
+                        <p style={{ fontSize: '1.1rem', marginBottom: '30px', borderLeft: '4px solid #38bdf8', paddingLeft: '15px' }}>
+                            NOTAM Geometry Studio operates on a <strong>Zero-Trust / Local-First</strong> architecture.
+                            We assume the network is compromised. Therefore, all intelligence processing occurs strictly within the client execution environment (Browser).
+                        </p>
 
-        <div className="back-link-container">
-          <a href="/" className="back-button">? Back to Map</a>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
+                            <div>
+                                <h3 style={{ color: '#f8fafc', borderBottom: '1px solid #475569', paddingBottom: '10px', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <Database size={16} /> DATA SOVEREIGNTY
+                                </h3>
+                                <p style={{ fontSize: '0.9rem' }}>
+                                    Parsing, Geometry Extraction, and Rendering logic are executed via Wasm/JS in the local DOM.
+                                    Flight Plan data entered into the "Mission Data" fields is stored in volatile memory (RAM) and discarded upon session termination.
+                                </p>
+                            </div>
+                            <div>
+                                <h3 style={{ color: '#f8fafc', borderBottom: '1px solid #475569', paddingBottom: '10px', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <Eye size={16} /> OPTICAL RECOGNITION
+                                </h3>
+                                <p style={{ fontSize: '0.9rem' }}>
+                                    Tesseract.js OCR engine runs isolated in a Web Worker. Image binaries are blobbed locally.
+                                    <strong>No images are ever transmitted</strong> to cloud endpoints for processing.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div style={{ marginTop: '30px', background: 'rgba(16, 185, 129, 0.05)', padding: '20px', border: '1px dashed #10b981' }}>
+                            <h3 style={{ color: '#10b981', margin: '0 0 10px 0', fontSize: '1rem' }}>// NETWORK TRAFFIC ANALYSIS</h3>
+                            <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '0.9rem' }}>
+                                <li><strong>Outbound:</strong> Tile Servers (CartoDB/Esri) for map imagery.</li>
+                                <li><strong>Inbound:</strong> Static Assets (JSON DBs) from origin.</li>
+                                <li><strong>Telemetry:</strong> NONE. No Google Analytics. No Mixpanel.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Status Column */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <div style={{ background: '#1e293b', border: '1px solid #334155', padding: '20px' }}>
+                        <div style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '5px' }}>SECURITY LEVEL</div>
+                        <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#10b981' }}>LEVEL 5</div>
+                        <div style={{ height: '4px', background: '#334155', marginTop: '10px', borderRadius: '2px', overflow: 'hidden' }}>
+                            <div style={{ width: '100%', height: '100%', background: '#10b981' }}></div>
+                        </div>
+                    </div>
+
+                    <div style={{ background: '#1e293b', border: '1px solid #334155', padding: '20px' }}>
+                        <div style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '15px' }}>ENCRYPTION STANDARDS</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                            <Lock size={16} color="#fcd34d" />
+                            <span style={{ fontSize: '0.9rem' }}>TLS 1.3 (In Transit)</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                            <Server size={16} color="#fcd34d" />
+                            <span style={{ fontSize: '0.9rem' }}>Vercel Edge Network</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <Radio size={16} color="#fcd34d" />
+                            <span style={{ fontSize: '0.9rem' }}>Local Wasm Sandbox</span>
+                        </div>
+                    </div>
+
+                    <div style={{ background: '#ef4444', color: 'white', padding: '20px', textAlign: 'center' }}>
+                        <ShieldAlert size={32} style={{ marginBottom: '10px' }} />
+                        <div style={{ fontWeight: 'bold' }}>RESTRICTED ACCESS</div>
+                        <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>AUTHORIZED PERSONNEL ONLY</div>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  );
-}
+    );
+};

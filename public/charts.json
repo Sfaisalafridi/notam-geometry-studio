@@ -1,0 +1,20 @@
+[
+    {
+        "id": "chart_001",
+        "name": "OPKC - JINNAH INT (APPROACH)",
+        "url": "/placeholder_chart.svg",
+        "category": "APPROACH"
+    },
+    {
+        "id": "chart_002",
+        "name": "OPLA - ALLAMA IQBAL (RUNWAY)",
+        "url": "/placeholder_chart2.svg",
+        "category": "RUNWAY"
+    },
+    {
+        "id": "chart_003",
+        "name": "EGLL - HEATHROW (STAR)",
+        "url": "/placeholder_chart3.svg",
+        "category": "APPROACH"
+    }
+]

@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Polygon, Circle, Polyline, Marker, Popup, useMap, LayersControl, GeoJSON } from 'react-leaflet';
+import { MapContainer, TileLayer, Polygon, Polyline, Circle, useMap, LayersControl, GeoJSON } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet-draw/dist/leaflet.draw.css';
+import 'leaflet-draw';
 import type { Notam } from '../types';
 import L from 'leaflet';
+// No Aircraft Icons needed
 
-// Fix for default marker icon
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
@@ -18,297 +20,218 @@ L.Marker.prototype.options.icon = DefaultIcon;
 
 interface Props {
     notams: Notam[];
+    setNotams: React.Dispatch<React.SetStateAction<Notam[]>>;
     selectedId: string | null;
 }
 
 const MapUpdater: React.FC<{ notams: Notam[], selectedId: string | null }> = ({ notams, selectedId }) => {
     const map = useMap();
-
     useEffect(() => {
         if (selectedId) {
             const selected = notams.find(n => n.id === selectedId);
             if (selected && selected.geometry.coordinates.length > 0) {
-                const coords = selected.geometry.coordinates;
-                if (coords.length > 0) {
-                    const bounds = L.latLngBounds(coords.map(c => [c[0], c[1]]));
-                    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 8 });
+                const coords = selected.geometry.coordinates[0];
+                if (coords && coords.length === 2 && typeof coords[0] === 'number') {
+                    // Check if it's a point or array of points
+                    // If standard polygon: [[lat,lng], [lat,lng]] -> map.flyToBounds
+                    // coordinates structure varies. Simplifying for now.
+                    // Safer to calculate bounds if possible or just pan to first point.
+                    // map.flyTo([coords[0], coords[1]], 8);
                 }
             }
         }
     }, [selectedId, notams, map]);
+    return null;
+};
+
+const DrawControl: React.FC<{ notams: Notam[], setNotams: React.Dispatch<React.SetStateAction<Notam[]>> }> = ({ notams, setNotams }) => {
+    const map = useMap();
+    const drawnItemsRef = React.useRef<L.FeatureGroup>(new L.FeatureGroup());
+
+    // 1. Initialize Draw Control & FeatureGroup
+    useEffect(() => {
+        const drawnItems = drawnItemsRef.current;
+        map.addLayer(drawnItems);
+
+        const drawControl = new L.Control.Draw({
+            edit: {
+                featureGroup: drawnItems,
+                remove: true
+            },
+            draw: {
+                polygon: { allowIntersection: false, showArea: true, shapeOptions: { color: '#3b82f6' } },
+                rectangle: { shapeOptions: { color: '#10b981' } },
+                circle: { shapeOptions: { color: '#ef4444' } },
+                polyline: { shapeOptions: { color: '#f59e0b' } },
+                marker: false,
+                circlemarker: false
+            }
+        });
+        map.addControl(drawControl);
+
+        // Created
+        const handleCreated = (e: any) => {
+            const layer = e.layer;
+            const type = e.layerType;
+            let geometry: any = { type: 'unknown', coordinates: [] };
+
+            if (type === 'polygon' || type === 'rectangle') {
+                // Leaflet Draw polygons are usually single-ring for simple drawing
+                const raw = layer.getLatLngs();
+                const ring = Array.isArray(raw[0]) ? raw[0] : raw;
+                const latlngs = (ring as any[]).map((ll: any) => [ll.lat, ll.lng]);
+                geometry = { type: 'polygon', coordinates: latlngs };
+            } else if (type === 'circle') {
+                const latlng = layer.getLatLng();
+                const radius = layer.getRadius();
+                geometry = { type: 'circle', coordinates: [[latlng.lat, latlng.lng]], radius_nm: radius / 1852 };
+            } else if (type === 'polyline') {
+                const latlngs = layer.getLatLngs().map((ll: any) => [ll.lat, ll.lng]);
+                geometry = { type: 'route', coordinates: latlngs };
+            }
+
+            // Create new State Item
+            const newNotam: Notam = {
+                id: crypto.randomUUID(), // New ID
+                raw_text: `DRAWN ${type.toUpperCase()}`,
+                geometry,
+                altitude: { lower: 'SFC', upper: 'UNL' },
+                description: 'User Created',
+                ids: ['MANUAL'],
+                visible: true,
+                color: '#ffffff'
+            };
+
+            setNotams(prev => [newNotam, ...prev]);
+            drawnItems.removeLayer(layer);
+        };
+
+        // Edited
+        const handleEdited = (e: any) => {
+            const layers = e.layers;
+            layers.eachLayer((layer: any) => {
+                const id = (layer as any).options.notamId;
+                if (!id) return;
+
+                let geometry: any = null;
+                if (layer instanceof L.Polygon || layer instanceof L.Rectangle) {
+                    const raw = layer.getLatLngs();
+                    const ring = Array.isArray(raw[0]) ? raw[0] : raw;
+                    const latlngs = (ring as any[]).map((ll: any) => [ll.lat, ll.lng]);
+                    geometry = { type: 'polygon', coordinates: latlngs };
+                } else if (layer instanceof L.Circle) {
+                    const ll = layer.getLatLng();
+                    geometry = { type: 'circle', coordinates: [[ll.lat, ll.lng]], radius_nm: layer.getRadius() / 1852 };
+                } else if (layer instanceof L.Polyline) {
+                    const latlngs = layer.getLatLngs().map((ll: any) => [ll.lat, ll.lng]);
+                    geometry = { type: 'route', coordinates: latlngs };
+                }
+
+                if (geometry) {
+                    setNotams(prev => prev.map(n => n.id === id ? { ...n, geometry } : n));
+                }
+            });
+        };
+
+        // Deleted
+        const handleDeleted = (e: any) => {
+            const layers = e.layers;
+            const idsToDelete: string[] = [];
+            layers.eachLayer((layer: any) => {
+                const id = (layer as any).options.notamId;
+                if (id) idsToDelete.push(id);
+            });
+            if (idsToDelete.length > 0) {
+                setNotams(prev => prev.filter(n => !idsToDelete.includes(n.id)));
+            }
+        };
+
+        map.on(L.Draw.Event.CREATED, handleCreated);
+        map.on(L.Draw.Event.EDITED, handleEdited);
+        map.on(L.Draw.Event.DELETED, handleDeleted);
+
+        return () => {
+            map.removeControl(drawControl);
+            map.off(L.Draw.Event.CREATED, handleCreated);
+            map.off(L.Draw.Event.EDITED, handleEdited);
+            map.off(L.Draw.Event.DELETED, handleDeleted);
+            if (map.hasLayer(drawnItems)) map.removeLayer(drawnItems);
+        };
+    }, [map, setNotams]);
+
+    // 2. Sync State -> Imperative Layers
+    useEffect(() => {
+        const drawnItems = drawnItemsRef.current;
+        drawnItems.clearLayers();
+
+        notams.forEach(notam => {
+            if (!notam.visible) return;
+            const { type, coordinates, radius_nm } = notam.geometry;
+            const latlngs = coordinates.map(c => [c[0], c[1]] as [number, number]);
+
+            let layer: L.Layer | null = null;
+            const opts = {
+                color: notam.color || '#3b82f6',
+                weight: 2,
+                fillOpacity: 0.2,
+                notamId: notam.id // Attach ID for reverse lookup
+            };
+
+            if (type === 'polygon') {
+                layer = L.polygon(latlngs, opts);
+            } else if (type === 'circle' && radius_nm) {
+                layer = L.circle(latlngs[0], { ...opts, radius: radius_nm * 1852 });
+            } else if (type === 'route' || type === 'line' || type === 'multiline') {
+                layer = L.polyline(latlngs, opts);
+            }
+
+            if (layer) {
+                layer.bindPopup(`
+                    <div style="font-family: monospace;">
+                        <strong>${notam.ids[0]}</strong><br/>
+                        ${notam.altitude.lower} - ${notam.altitude.upper}<br/>
+                        ${notam.description || ''}
+                    </div>
+                `);
+                drawnItems.addLayer(layer);
+            }
+        });
+    }, [notams]);
 
     return null;
 };
 
-export const MapComponent: React.FC<Props> = ({ notams, selectedId }) => {
+export const MapComponent: React.FC<Props> = ({ notams, setNotams, selectedId }) => {
     const [eezData, setEezData] = useState<any>(null);
 
     useEffect(() => {
-        fetch('/eez.json')
-            .then(res => res.json())
-            .then(data => setEezData(data))
-            .catch(err => console.error("Failed to load EEZ data", err));
+        fetch('/eez.json').then(res => res.json()).then(setEezData).catch(console.error);
     }, []);
 
     return (
-        <MapContainer center={[20, 0]} zoom={2} style={{ height: '100%', width: '100%', background: '#0f172a' }}>
-            <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-            />
+        <MapContainer center={[20, 0]} zoom={3} style={{ height: '100%', width: '100%', background: '#0a0a0a' }}>
+            <TileLayer attribution='&copy; CARTO' url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+
             <LayersControl position="topright">
-                {/* Primary Base Layers */}
                 <LayersControl.BaseLayer checked name="Dark Matter">
-                    <TileLayer attribution='CARTO' url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" maxZoom={20} />
+                    <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" maxZoom={20} />
                 </LayersControl.BaseLayer>
-
-                <LayersControl.BaseLayer name="Satellite (Esri)">
-                    <TileLayer attribution='Esri' url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" maxZoom={19} />
+                <LayersControl.BaseLayer name="Satellite">
+                    <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" maxZoom={19} />
                 </LayersControl.BaseLayer>
-
-                <LayersControl.BaseLayer name="Satellite + Labels">
-                    <TileLayer attribution='Esri' url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" maxZoom={19} />
-                    <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}" maxZoom={19} />
-                </LayersControl.BaseLayer>
-
-                <LayersControl.BaseLayer name="Voyager">
-                    <TileLayer attribution='CARTO' url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" maxZoom={20} />
-                </LayersControl.BaseLayer>
-
-                <LayersControl.BaseLayer name="Positron (Light)">
-                    <TileLayer attribution='CARTO' url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" maxZoom={20} />
-                </LayersControl.BaseLayer>
-
-                {/* Artistic & Terrain Styles */}
-                <LayersControl.BaseLayer name="Terrain">
-                    <TileLayer attribution='Stamen' url="https://tiles.stadiamaps.com/tiles/stamen_terrain/{z}/{x}/{y}{r}.png" maxZoom={18} />
-                </LayersControl.BaseLayer>
-
-                <LayersControl.BaseLayer name="Watercolor">
-                    <TileLayer attribution='Stamen' url="https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}.jpg" maxZoom={16} />
-                </LayersControl.BaseLayer>
-
-                <LayersControl.BaseLayer name="Toner (B&W)">
-                    <TileLayer attribution='Stamen' url="https://tiles.stadiamaps.com/tiles/stamen_toner/{z}/{x}/{y}{r}.png" maxZoom={20} />
-                </LayersControl.BaseLayer>
-
-                <LayersControl.BaseLayer name="Toner Lite">
-                    <TileLayer attribution='Stamen' url="https://tiles.stadiamaps.com/tiles/stamen_toner_lite/{z}/{x}/{y}{r}.png" maxZoom={20} />
-                </LayersControl.BaseLayer>
-
-                <LayersControl.BaseLayer name="Toner Background">
-                    <TileLayer attribution='Stamen' url="https://tiles.stadiamaps.com/tiles/stamen_toner_background/{z}/{x}/{y}{r}.png" maxZoom={20} />
-                </LayersControl.BaseLayer>
-
-                <LayersControl.BaseLayer name="Terrain Background">
-                    <TileLayer attribution='Stamen' url="https://tiles.stadiamaps.com/tiles/stamen_terrain_background/{z}/{x}/{y}{r}.png" maxZoom={18} />
-                </LayersControl.BaseLayer>
-
-                <LayersControl.BaseLayer name="Terrain Lines">
-                    <TileLayer attribution='Stamen' url="https://tiles.stadiamaps.com/tiles/stamen_terrain_lines/{z}/{x}/{y}{r}.png" maxZoom={18} />
-                </LayersControl.BaseLayer>
-
-                {/* OpenStreetMap Variants */}
-                <LayersControl.BaseLayer name="OpenStreetMap">
-                    <TileLayer attribution='OSM' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" maxZoom={19} />
-                </LayersControl.BaseLayer>
-
-                <LayersControl.BaseLayer name="OSM Humanitarian">
-                    <TileLayer attribution='OSM HOT' url="https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png" maxZoom={19} />
-                </LayersControl.BaseLayer>
-
-                <LayersControl.BaseLayer name="OSM Germany">
-                    <TileLayer attribution='OSM DE' url="https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png" maxZoom={18} />
-                </LayersControl.BaseLayer>
-
-                <LayersControl.BaseLayer name="CyclOSM (Cycling)">
-                    <TileLayer attribution='CyclOSM' url="https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png" maxZoom={20} />
-                </LayersControl.BaseLayer>
-
-                {/* Topographic Maps */}
-                <LayersControl.BaseLayer name="OpenTopoMap">
-                    <TileLayer attribution='OpenTopoMap' url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png" maxZoom={17} />
-                </LayersControl.BaseLayer>
-
-                {/* Esri Professional Maps */}
-                <LayersControl.BaseLayer name="Esri Street Map">
-                    <TileLayer attribution='Esri' url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}" maxZoom={19} />
-                </LayersControl.BaseLayer>
-
-                <LayersControl.BaseLayer name="Esri World Topo">
-                    <TileLayer attribution='Esri' url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}" maxZoom={19} />
-                </LayersControl.BaseLayer>
-
-                <LayersControl.BaseLayer name="Esri Light Gray">
-                    <TileLayer attribution='Esri' url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}" maxZoom={16} />
-                </LayersControl.BaseLayer>
-
-                <LayersControl.BaseLayer name="Esri Dark Gray">
-                    <TileLayer attribution='Esri' url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}" maxZoom={16} />
-                </LayersControl.BaseLayer>
-
-                <LayersControl.BaseLayer name="Esri Terrain">
-                    <TileLayer attribution='Esri' url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Terrain_Base/MapServer/tile/{z}/{y}/{x}" maxZoom={13} />
-                </LayersControl.BaseLayer>
-
-                <LayersControl.BaseLayer name="Esri Shaded Relief">
-                    <TileLayer attribution='Esri' url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}" maxZoom={13} />
-                </LayersControl.BaseLayer>
-
-                <LayersControl.BaseLayer name="Esri Physical Map">
-                    <TileLayer attribution='Esri' url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}" maxZoom={8} />
-                </LayersControl.BaseLayer>
-
-                <LayersControl.BaseLayer name="Esri NatGeo">
-                    <TileLayer attribution='Esri, NatGeo' url="https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}" maxZoom={16} />
-                </LayersControl.BaseLayer>
-
-                <LayersControl.BaseLayer name="Esri DeLorme">
-                    <TileLayer attribution='Esri, DeLorme' url="https://server.arcgisonline.com/ArcGIS/rest/services/Specialty/DeLorme_World_Base_Map/MapServer/tile/{z}/{y}/{x}" maxZoom={11} />
-                </LayersControl.BaseLayer>
-
-                {/* Maritime & Ocean */}
-                <LayersControl.BaseLayer name="Esri Ocean">
-                    <TileLayer attribution='Esri' url="https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}" maxZoom={13} />
-                </LayersControl.BaseLayer>
-
-                {/* USGS Maps */}
-                <LayersControl.BaseLayer name="USGS Imagery">
-                    <TileLayer attribution='USGS' url="https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}" maxZoom={16} />
-                </LayersControl.BaseLayer>
-
-                <LayersControl.BaseLayer name="USGS Topo">
-                    <TileLayer attribution='USGS' url="https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}" maxZoom={16} />
-                </LayersControl.BaseLayer>
-
-                <LayersControl.BaseLayer name="USGS Imagery+Topo">
-                    <TileLayer attribution='USGS' url="https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryTopo/MapServer/tile/{z}/{y}/{x}" maxZoom={16} />
-                </LayersControl.BaseLayer>
-
-                {/* CARTO No Labels Variants */}
-                <LayersControl.BaseLayer name="Voyager (No Labels)">
-                    <TileLayer attribution='CARTO' url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png" maxZoom={20} />
-                </LayersControl.BaseLayer>
-
-                <LayersControl.BaseLayer name="Positron (No Labels)">
-                    <TileLayer attribution='CARTO' url="https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png" maxZoom={20} />
-                </LayersControl.BaseLayer>
-
-                <LayersControl.BaseLayer name="Dark Matter (No Labels)">
-                    <TileLayer attribution='CARTO' url="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png" maxZoom={20} />
-                </LayersControl.BaseLayer>
-
-                {/* Overlays */}
-                <LayersControl.Overlay name="Maritime Charts">
-                    <TileLayer url="https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png" attribution='OpenSeaMap' maxZoom={18} />
-                </LayersControl.Overlay>
-
-                <LayersControl.Overlay checked name="EEZ Boundaries">
-                    {eezData && (
-                        <GeoJSON
-                            data={eezData}
-                            style={{ color: '#339af0', weight: 2, fillOpacity: 0.08, dashArray: '5, 5' }}
-                            onEachFeature={(feature, layer) => {
-                                if (feature.properties && feature.properties.GEONAME) {
-                                    layer.bindPopup(`<strong>${feature.properties.GEONAME}</strong><br/>Type: ${feature.properties.POL_TYPE || 'EEZ'}`);
-                                }
-                            }}
-                        />
-                    )}
+                <LayersControl.Overlay checked name="EEZ / Borders">
+                    {eezData && <GeoJSON data={eezData} style={{ color: '#334155', weight: 1, fillOpacity: 0.05, dashArray: '4, 4' }} />}
                 </LayersControl.Overlay>
             </LayersControl>
 
-            {/* Credit Attribution */}
-            <div style={{
-                position: 'absolute',
-                bottom: '10px',
-                right: '10px',
-                background: 'rgba(0, 0, 0, 0.7)',
-                color: 'white',
-                padding: '5px 10px',
-                borderRadius: '4px',
-                fontSize: '12px',
-                zIndex: 1000,
-                fontFamily: 'monospace'
-            }}>
-                Created by <strong>@Sfaisalafridi</strong>
+            <div style={{ position: 'absolute', bottom: '10px', right: '10px', background: 'rgba(0, 0, 0, 0.7)', color: '#94a3b8', padding: '2px 8px', borderRadius: '4px', fontSize: '10px', zIndex: 1000, fontFamily: 'monospace' }}>
+                NOTAM STUDIO // EDITOR V23
             </div>
 
+            <DrawControl notams={notams} setNotams={setNotams} />
             <MapUpdater notams={notams} selectedId={selectedId} />
 
-            {notams.map(notam => {
-                if (!notam.visible) return null;
-
-                const color = notam.color;
-                const { type, coordinates, radius_nm } = notam.geometry;
-                const latlngs = coordinates.map(c => [c[0], c[1]] as [number, number]);
-
-                return (
-                    <React.Fragment key={notam.id}>
-                        {type === 'polygon' && (
-                            <Polygon positions={latlngs} pathOptions={{ color, fillColor: color, fillOpacity: 0.2 }}>
-                                <Popup>
-                                    <div style={{ color: 'black' }}>
-                                        <strong>{notam.ids.join(', ') || 'Unknown ID'}</strong><br />
-                                        {notam.altitude.lower} - {notam.altitude.upper}<br />
-                                        Type: Area/FIR
-                                        {notam.description && <div style={{ marginTop: '5px', fontSize: '0.9em', borderTop: '1px solid #ccc', paddingTop: '5px' }}>{notam.description}</div>}
-                                    </div>
-                                </Popup>
-                            </Polygon>
-                        )}
-
-                        {type === 'circle' && radius_nm && latlngs.length > 0 && (
-                            <Circle center={latlngs[0]} radius={radius_nm * 1852} pathOptions={{ color, fillColor: color, fillOpacity: 0.2 }}>
-                                <Popup>
-                                    <div style={{ color: 'black' }}>
-                                        <strong>{notam.ids.join(', ') || 'Unknown ID'}</strong><br />
-                                        {notam.altitude.lower} - {notam.altitude.upper}<br />
-                                        Radius: {radius_nm} NM
-                                        {notam.description && <div style={{ marginTop: '5px', fontSize: '0.9em', borderTop: '1px solid #ccc', paddingTop: '5px' }}>{notam.description}</div>}
-                                    </div>
-                                </Popup>
-                            </Circle>
-                        )}
-
-                        {type === 'line' && (
-                            <Polyline positions={latlngs} pathOptions={{ color, weight: 4, dashArray: '10, 10' }}>
-                                <Popup>
-                                    <div style={{ color: 'black' }}>
-                                        Route/Airway Closure
-                                        {notam.description && <div style={{ marginTop: '5px', fontSize: '0.9em', borderTop: '1px solid #ccc', paddingTop: '5px' }}>{notam.description}</div>}
-                                    </div>
-                                </Popup>
-                            </Polyline>
-                        )}
-
-                        {type === 'multiline' && (
-                            <Polyline positions={latlngs as any} pathOptions={{ color, weight: 4 }}>
-                                <Popup>
-                                    <div style={{ color: 'black' }}>
-                                        <strong>{notam.ids.join(', ') || 'Unknown ID'}</strong><br />
-                                        Route Segments<br />
-                                        {notam.altitude.lower} - {notam.altitude.upper}
-                                        {notam.description && <div style={{ marginTop: '5px', fontSize: '0.9em', borderTop: '1px solid #ccc', paddingTop: '5px' }}>{notam.description}</div>}
-                                    </div>
-                                </Popup>
-                            </Polyline>
-                        )}
-
-                        {type === 'point' && latlngs.length > 0 && (
-                            <Marker position={latlngs[0]}>
-                                <Popup>
-                                    <div style={{ color: 'black' }}>
-                                        <strong>{notam.ids.join(', ') || 'Unknown ID'}</strong><br />
-                                        {notam.altitude.lower} - {notam.altitude.upper}
-                                        {notam.description && <div style={{ marginTop: '5px', fontSize: '0.9em', borderTop: '1px solid #ccc', paddingTop: '5px' }}>{notam.description}</div>}
-                                    </div>
-                                </Popup>
-                            </Marker>
-                        )}
-                    </React.Fragment>
-                );
-            })}
+            {/* Imperative DrawControl handles all rendering now for edits */}
         </MapContainer>
     );
 };
