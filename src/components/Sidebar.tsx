@@ -114,7 +114,7 @@ export const Sidebar: React.FC<Props> = ({ notams, setNotams, onSelect, onExport
                     </div>
                     <div>
                         <div style={{ fontWeight: 800, fontSize: '1.1rem', letterSpacing: '1px', lineHeight: 1 }}>NOTAM<span style={{ color: '#0ea5e9' }}>STUDIO</span></div>
-                        <div style={{ fontWeight: 800, fontSize: '1.1rem', letterSpacing: '1px', lineHeight: 1 }}>NOTAM<span style={{ color: '#0ea5e9' }}>STUDIO</span></div>
+
                         <div style={{ fontSize: '0.7rem', color: '#71717a', fontWeight: 600, marginTop: '2px' }}>PROFESSIONAL EDITION v2.5 (Netlify)</div>
                     </div>
                 </div>
